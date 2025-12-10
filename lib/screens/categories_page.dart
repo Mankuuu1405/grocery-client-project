@@ -1,32 +1,83 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
 import '../theme/bhejdu_colors.dart';
 import '../widgets/category_tile.dart';
 import '../widgets/top_app_bar.dart';
 
-class CategoriesPage extends StatelessWidget {
+class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
+
+  @override
+  State<CategoriesPage> createState() => _CategoriesPageState();
+}
+
+class _CategoriesPageState extends State<CategoriesPage> {
+  List categories = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCategories();
+  }
+
+  Future fetchCategories() async {
+    final response = await http.get(
+      Uri.parse("https://YOUR_DOMAIN.com/get_categories.php"),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (data["status"] == "success") {
+      setState(() {
+        categories = data["categories"];
+        loading = false;
+      });
+    }
+  }
+
+  IconData getIcon(String name) {
+    switch (name) {
+      case "eco":
+        return Icons.eco;
+      case "apple":
+        return Icons.apple;
+      case "fastfood":
+        return Icons.fastfood;
+      case "local_mall":
+        return Icons.local_mall;
+      case "local_drink":
+        return Icons.local_drink;
+      case "local_cafe":
+        return Icons.local_cafe;
+      default:
+        return Icons.category;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: BhejduColors.bgLight,
-
       body: Column(
         children: [
-          /// ---------------- BLUE HEADER ----------------
+          /// HEADER
           BhejduAppBar(
             title: "Categories",
             showBack: true,
             onBackTap: () => Navigator.pop(context),
           ),
 
-          /// ---------------- BODY ----------------
           Expanded(
-            child: SingleChildScrollView(
+            child: loading
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  /// ---------------- SEARCH BOX ----------------
+                  /// SEARCH BAR
                   Container(
                     height: 48,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -44,55 +95,46 @@ class CategoriesPage extends StatelessWidget {
                     child: const TextField(
                       decoration: InputDecoration(
                         border: InputBorder.none,
-                        icon: Icon(Icons.search, color: BhejduColors.primaryBlue),
+                        icon: Icon(Icons.search,
+                            color: BhejduColors.primaryBlue),
                         hintText: "Search categories",
-                        hintStyle: TextStyle(color: BhejduColors.textGrey),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  /// ---------------- GRID OF CATEGORIES ----------------
-                  GridView.count(
-                    crossAxisCount: 2,
+                  /// DYNAMIC GRID
+                  GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1.1,
+                    gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 1.1,
+                    ),
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final item = categories[index];
 
-                    children: const [
-                      CategoryTile(
-                        title: "Vegetables",
-                        count: "20 Items",
-                        icon: Icons.eco,
-                      ),
-                      CategoryTile(
-                        title: "Fruits",
-                        count: "18 Items",
-                        icon: Icons.apple,
-                      ),
-                      CategoryTile(
-                        title: "Snacks",
-                        count: "32 Items",
-                        icon: Icons.fastfood,
-                      ),
-                      CategoryTile(
-                        title: "Oils",
-                        count: "12 Items",
-                        icon: Icons.local_mall,
-                      ),
-                      CategoryTile(
-                        title: "Dairy",
-                        count: "10 Items",
-                        icon: Icons.local_drink,
-                      ),
-                      CategoryTile(
-                          title: "Beverages",
-                          count: "16 Items",
-                          icon: Icons.local_cafe),
-                    ],
+                      return CategoryTile(
+                        title: item["name"],
+                        count: "${item["total_items"]} Items",
+                        icon: getIcon(item["icon"]),
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            "/product-list",   // ✅ FIXED ROUTE NAME
+                            arguments: {
+                              "id": item["id"],          // ✅ CATEGORY ID
+                              "name": item["name"],      // ✅ CATEGORY NAME
+                            },
+                          );
+                        },
+                      );
+                    },
                   ),
                 ],
               ),

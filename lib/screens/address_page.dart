@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
+import '../utils/preference_manager.dart';
 
 class AddressManagementPage extends StatefulWidget {
   const AddressManagementPage({super.key});
@@ -10,16 +13,87 @@ class AddressManagementPage extends StatefulWidget {
 }
 
 class _AddressManagementPageState extends State<AddressManagementPage> {
-  List<Map<String, String>> addresses = [
-    {
-      "type": "Home",
-      "details": "123, Green Avenue, Near City Mall, Lucknow",
-    },
-    {
-      "type": "Office",
-      "details": "B-42 Tech Park Tower, 3rd Floor",
-    },
-  ];
+  List addresses = [];
+  bool isLoading = true;
+
+  final String baseUrl =
+      "https://darkslategrey-chicken-274271.hostingersite.com/api";
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAddresses();
+  }
+
+  /// FETCH USER ADDRESSES FROM BACKEND
+  Future fetchAddresses() async {
+    final userId = await PreferenceManager.getUserId();
+
+    final response = await http.post(
+      Uri.parse("$baseUrl/get_addresses.php"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"user_id": userId}),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (data["status"] == "success") {
+      setState(() {
+        addresses = data["addresses"];
+        isLoading = false;
+      });
+    } else {
+      setState(() => isLoading = false);
+    }
+  }
+
+  /// ADD NEW ADDRESS
+  Future addAddress(String type, String details) async {
+    final userId = await PreferenceManager.getUserId();
+
+    await http.post(
+      Uri.parse("$baseUrl/add_address.php"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "user_id": userId,
+        "title": type,
+        "address": details,
+      }),
+    );
+
+    fetchAddresses(); // refresh list
+  }
+
+  /// UPDATE EXISTING ADDRESS
+  Future updateAddress(int id, String type, String details) async {
+    await http.post(
+      Uri.parse("$baseUrl/update_address.php"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "id": id,
+        "title": type,
+        "address": details,
+      }),
+    );
+
+    fetchAddresses();
+  }
+
+  /// DELETE ADDRESS
+  Future deleteAddress(int id) async {
+    final userId = await PreferenceManager.getUserId();
+
+    await http.post(
+      Uri.parse("$baseUrl/delete_address.php"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "id": id,
+        "user_id": userId,
+      }),
+    );
+
+    fetchAddresses();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,12 +102,11 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
 
       body: Column(
         children: [
-          /// TOP CUSTOM APP BAR
+          /// TOP APP BAR
           BhejduAppBar(
             title: "My Addresses",
             showBack: true,
             onBackTap: () => Navigator.pop(context),
-            onLoginTap: () {},
           ),
 
           const SizedBox(height: 10),
@@ -66,9 +139,11 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
 
           const SizedBox(height: 20),
 
-          /// SAVED ADDRESSES LIST
+          /// ADDRESS LIST
           Expanded(
-            child: ListView.builder(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: addresses.length,
               itemBuilder: (context, index) {
@@ -92,12 +167,12 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      /// ADDRESS TYPE & OPTIONS
+                      /// TITLE + BUTTONS (EDIT + DELETE)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            item["type"]!,
+                            item["title"],
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 18,
@@ -108,15 +183,22 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
                           Row(
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.edit, color: BhejduColors.primaryBlue),
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: BhejduColors.primaryBlue,
+                                ),
                                 onPressed: () {
-                                  _editAddress(index);
+                                  _editAddress(item);
                                 },
                               ),
+
                               IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
                                 onPressed: () {
-                                  setState(() => addresses.removeAt(index));
+                                  deleteAddress(item["id"]);
                                 },
                               ),
                             ],
@@ -128,7 +210,7 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
 
                       /// ADDRESS DETAILS
                       Text(
-                        item["details"]!,
+                        item["address"],
                         style: const TextStyle(
                           color: BhejduColors.textGrey,
                           fontSize: 14,
@@ -145,7 +227,7 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
     );
   }
 
-  /// ------------------- ADD NEW ADDRESS -------------------
+  // ------------------------- ADD ADDRESS BOTTOMSHEET -------------------------
   void _showNewAddressBottomSheet() {
     TextEditingController typeCtrl = TextEditingController();
     TextEditingController detailsCtrl = TextEditingController();
@@ -153,11 +235,9 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-
       builder: (_) {
         return Padding(
           padding: EdgeInsets.only(
@@ -166,7 +246,6 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
             top: 20,
             bottom: MediaQuery.of(context).viewInsets.bottom + 20,
           ),
-
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -177,6 +256,7 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
+
               const SizedBox(height: 18),
 
               TextField(
@@ -213,19 +293,12 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
                   backgroundColor: BhejduColors.primaryBlue,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 onPressed: () {
-                  if (typeCtrl.text.isNotEmpty &&
-                      detailsCtrl.text.isNotEmpty) {
-                    setState(() {
-                      addresses.add({
-                        "type": typeCtrl.text,
-                        "details": detailsCtrl.text,
-                      });
-                    });
-                    Navigator.pop(context);
-                  }
+                  addAddress(typeCtrl.text, detailsCtrl.text);
+                  Navigator.pop(context);
                 },
                 child: const Text(
                   "Save Address",
@@ -239,26 +312,19 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
     );
   }
 
-  /// ------------------- EDIT ADDRESS -------------------
-  void _editAddress(int index) {
+  // ------------------------- EDIT ADDRESS BOTTOMSHEET -------------------------
+  void _editAddress(dynamic item) {
     TextEditingController typeCtrl =
-    TextEditingController(text: addresses[index]["type"]);
+    TextEditingController(text: item["title"]);
     TextEditingController detailsCtrl =
-    TextEditingController(text: addresses[index]["details"]);
+    TextEditingController(text: item["address"]);
 
-    _showEditBottomSheet(typeCtrl, detailsCtrl, index);
-  }
-
-  void _showEditBottomSheet(
-      TextEditingController typeCtrl, TextEditingController detailsCtrl, int index) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-
       builder: (_) {
         return Padding(
           padding: EdgeInsets.only(
@@ -267,7 +333,6 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
             top: 20,
             bottom: MediaQuery.of(context).viewInsets.bottom + 20,
           ),
-
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -278,6 +343,7 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
+
               const SizedBox(height: 18),
 
               TextField(
@@ -318,12 +384,7 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
                   ),
                 ),
                 onPressed: () {
-                  setState(() {
-                    addresses[index] = {
-                      "type": typeCtrl.text,
-                      "details": detailsCtrl.text,
-                    };
-                  });
+                  updateAddress(item["id"], typeCtrl.text, detailsCtrl.text);
                   Navigator.pop(context);
                 },
                 child: const Text(

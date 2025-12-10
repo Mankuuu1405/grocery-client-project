@@ -1,106 +1,100 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
 import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
 import '../widgets/product_tile.dart';
+import 'product_variants_page.dart';
 
-class ProductListingPage extends StatelessWidget {
+class ProductListingPage extends StatefulWidget {
+  final int categoryId;
   final String categoryName;
 
   const ProductListingPage({
     super.key,
+    required this.categoryId,
     required this.categoryName,
   });
+
+  @override
+  State<ProductListingPage> createState() => _ProductListingPageState();
+}
+
+class _ProductListingPageState extends State<ProductListingPage> {
+  List products = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProducts();
+  }
+
+  Future fetchProducts() async {
+    final response = await http.post(
+      Uri.parse("https://YOUR_DOMAIN.com/get_products.php"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"category_id": widget.categoryId}),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (data["status"] == "success") {
+      setState(() {
+        products = data["products"];
+        loading = false;
+      });
+    }
+  }
+
+  IconData getIcon() => Icons.shopping_bag;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: BhejduColors.bgLight,
-
       body: Column(
         children: [
-          /// 🔵 Top Blue App Bar
           BhejduAppBar(
-            title: categoryName,
+            title: widget.categoryName,
             showBack: true,
             onBackTap: () => Navigator.pop(context),
-            onLoginTap: () => Navigator.pushNamed(context, "/login"),
           ),
 
-          /// BODY
           Expanded(
-            child: SingleChildScrollView(
+            child: loading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              itemCount: products.length,
+              itemBuilder: (context, index) {
+                final item = products[index];
 
-                  /// 🔍 Search Bar
-                  Container(
-                    height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 5,
-                          offset: Offset(2, 3),
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProductVariantsPage(
+                            productId: item["id"],
+                            productName: item["name"],
+                          ),
                         ),
-                      ],
+                      );
+                    },
+                    child: ProductTile(
+                      title: item["name"],
+                      subtitle: "Best Quality",
+                      price: "₹${item["price"]}",
+                      icon: getIcon(),
+                      onTap: () {},
                     ),
-                    child: const TextField(
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        icon: Icon(Icons.search),
-                        hintText: "Search products",
-                      ),
-                    ),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  /// PRODUCTS (EXAMPLE ITEMS)
-                  ProductTile(
-                    title: "Premium Basmati Rice",
-                    subtitle: "1kg Pack",
-                    price: "₹120",
-                    icon: Icons.rice_bowl,
-                    onTap: () {},
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  ProductTile(
-                    title: "Wheat Flour – Aata",
-                    subtitle: "5kg Bag",
-                    price: "₹185",
-                    icon: Icons.grain,
-                    onTap: () {},
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  ProductTile(
-                    title: "Refined Sugar",
-                    subtitle: "1kg Pack",
-                    price: "₹45",
-                    icon: Icons.balance,
-                    onTap: () {},
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  ProductTile(
-                    title: "Groundnut Oil",
-                    subtitle: "1L Bottle",
-                    price: "₹140",
-                    icon: Icons.local_mall,
-                    onTap: () {},
-                  ),
-
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],

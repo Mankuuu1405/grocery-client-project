@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';                           // ✅ Added
+import 'package:http/http.dart' as http;         // ✅ Added
+import 'package:shared_preferences/shared_preferences.dart';  // ⭐ ADDED
+
 import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
 
@@ -12,6 +16,8 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailCtrl = TextEditingController();
   final TextEditingController passCtrl = TextEditingController();
+
+  bool isLoading = false; // ✅ Added loader
 
   @override
   Widget build(BuildContext context) {
@@ -112,9 +118,7 @@ class _LoginPageState extends State<LoginPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, "/home");
-                      },
+                      onPressed: isLoading ? null : loginUser,   // ✅ Updated
                       style: ElevatedButton.styleFrom(
                         backgroundColor: BhejduColors.primaryBlue,
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -122,7 +126,9 @@ class _LoginPageState extends State<LoginPage> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: const Text(
+                      child: isLoading
+                          ? const CircularProgressIndicator(color: Colors.white) // ✅ Loader
+                          : const Text(
                         "Login",
                         style: TextStyle(
                           fontSize: 17,
@@ -165,5 +171,61 @@ class _LoginPageState extends State<LoginPage> {
         ],
       ),
     );
+  }
+
+  // --------------------------------------------------------
+  // ✅ LOGIN FUNCTION (PHP + MySQL)
+  // --------------------------------------------------------
+  Future<void> loginUser() async {
+    final email = emailCtrl.text.trim();
+    final password = passCtrl.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("All fields are required")),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    final url = Uri.parse(
+      "https://darkslategrey-chicken-274271.hostingersite.com/api/login.php",
+    );
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": email,
+          "password": password,
+        }),
+      );
+
+      final result = jsonDecode(response.body);
+
+      setState(() => isLoading = false);
+
+      if (result["status"] == "success") {
+
+        // ⭐⭐⭐ SAVE USER ID LOCALLY — ADDED ⭐⭐⭐
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setInt("user_id", result["user_id"]);
+
+        // ⭐ REDIRECT TO HOME PAGE
+        Navigator.pushNamed(context, "/home");
+
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result["message"] ?? "Login failed")),
+        );
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Server error")),
+      );
+    }
   }
 }

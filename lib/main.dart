@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+// SCREENS
 import 'screens/splash_screen.dart';
 import 'screens/login_page.dart';
 import 'screens/signup_page.dart';
@@ -11,9 +14,14 @@ import 'screens/address_page.dart';
 import 'screens/orders_page.dart';
 import 'screens/profile_page.dart';
 import 'screens/order_placed_page.dart';
+import 'screens/edit_profile_page.dart';
+
 import 'theme/app_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SharedPreferences.getInstance();
+
   runApp(const BhejduApp());
 }
 
@@ -25,7 +33,9 @@ class BhejduApp extends StatelessWidget {
     return MaterialApp(
       title: "Bhejdu Grocery",
       debugShowCheckedModeBanner: false,
+
       theme: AppTheme.lightTheme,
+
       initialRoute: "/",
 
       routes: {
@@ -41,10 +51,22 @@ class BhejduApp extends StatelessWidget {
         "/profile": (context) => const ProfilePage(),
         "/order-placed": (context) => const OrderPlacedPage(),
 
+        /// ⭐ EDIT PROFILE ROUTE WITH ARGUMENTS
+        "/edit-profile": (context) {
+          final Map userData =
+          ModalRoute.of(context)!.settings.arguments as Map;
+          return EditProfilePage(userData: userData);
+        },
+
+        /// ⭐ UPDATED PRODUCT LIST ROUTE (NOW ACCEPTS CATEGORY ID + NAME)
         "/product-list": (context) {
-          final String categoryName =
-          ModalRoute.of(context)!.settings.arguments as String;
-          return ProductListingPage(categoryName: categoryName);
+          final Map args =
+          ModalRoute.of(context)!.settings.arguments as Map;
+
+          return ProductListingPage(
+            categoryId: args["id"],
+            categoryName: args["name"],
+          );
         },
       },
     );

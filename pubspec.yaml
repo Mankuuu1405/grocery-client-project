@@ -11,12 +11,21 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  http: ^1.1.0   # <-- ✅ Added this line
+
+  # ⭐ REQUIRED FOR PHP API & HOSTINGER
+  http: ^1.6.0
+
+  # ⭐ GOOD — ONLY KEEP MAIN SHARED PREFERENCES (remove platform-specific)
+  shared_preferences: ^2.3.2
+
+  # ⭐ REQUIRED FOR IMAGE PICKING & CROPPING
+  image_picker: ^1.2.1
+  image_cropper: ^11.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^2.0.3
 
 flutter:
   uses-material-design: true

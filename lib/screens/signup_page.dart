@@ -211,7 +211,10 @@ class _SignupPageState extends State<SignupPage> {
       setState(() => isLoading = false);
 
       if (data["status"] == "success") {
-        Navigator.pushNamed(context, "/home");
+        /// ------------------------------------------
+        /// FIXED 👉 Go to LOGIN instead of HOME
+        /// ------------------------------------------
+        Navigator.pushNamed(context, "/login");
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(data["message"])),
