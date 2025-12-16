@@ -17,7 +17,7 @@ class CheckoutPage extends StatelessWidget {
             title: "Checkout",
             showBack: true,
             onBackTap: () => Navigator.pop(context),
-            onLoginTap: () {},     // You can add login logic
+                // You can add login logic
           ),
 
           Expanded(

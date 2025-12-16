@@ -25,7 +25,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   Future fetchCategories() async {
     final response = await http.get(
-      Uri.parse("https://YOUR_DOMAIN.com/get_categories.php"),
+      Uri.parse("https://darkslategrey-chicken-274271.hostingersite.com/api/get_categories.php"),
     );
 
     final data = jsonDecode(response.body);

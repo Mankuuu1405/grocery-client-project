@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/bhejdu_colors.dart';
 
 class BhejduAppBar extends StatelessWidget {
   final String title;
-
-  /// if true → show back arrow
-  /// if false → show menu icon
   final bool showBack;
-
   final VoidCallback? onBackTap;
   final VoidCallback? onMenuTap;
-  final VoidCallback? onLoginTap;
+  final bool showAccountIcon;
 
   const BhejduAppBar({
     super.key,
@@ -18,14 +15,24 @@ class BhejduAppBar extends StatelessWidget {
     this.showBack = false,
     this.onBackTap,
     this.onMenuTap,
-    this.onLoginTap,
+    this.showAccountIcon = true,
   });
+
+  Future<void> _handleAccountTap(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt("user_id");
+
+    if (userId != null) {
+      Navigator.pushNamed(context, "/profile");
+    } else {
+      Navigator.pushNamed(context, "/login");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.only(top: 45, left: 16, right: 16, bottom: 16),
-      width: double.infinity,
       decoration: const BoxDecoration(
         color: BhejduColors.primaryBlue,
         borderRadius: BorderRadius.only(
@@ -33,32 +40,30 @@ class BhejduAppBar extends StatelessWidget {
           bottomRight: Radius.circular(22),
         ),
       ),
-
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          /// LEFT ICON (BACK or MENU)
+          /// LEFT
           GestureDetector(
             onTap: () {
               if (showBack) {
-                if (onBackTap != null) onBackTap!();
-                else Navigator.pop(context);
+                onBackTap != null
+                    ? onBackTap!()
+                    : Navigator.pop(context);
               } else {
-                if (onMenuTap != null) {
-                  onMenuTap!();
-                } else {
-                  Scaffold.of(context).openDrawer();
-                }
+                onMenuTap != null
+                    ? onMenuTap!()
+                    : Scaffold.of(context).openDrawer();
               }
             },
             child: Icon(
               showBack ? Icons.arrow_back : Icons.menu,
-              size: 26,
               color: Colors.white,
+              size: 26,
             ),
           ),
 
-          /// TITLE
+          /// CENTER
           Text(
             title,
             style: const TextStyle(
@@ -68,15 +73,17 @@ class BhejduAppBar extends StatelessWidget {
             ),
           ),
 
-          /// RIGHT ACTION (LOGIN / PROFILE)
-          GestureDetector(
-            onTap: onLoginTap,
+          /// RIGHT
+          showAccountIcon
+              ? GestureDetector(
+            onTap: () => _handleAccountTap(context),
             child: const Icon(
               Icons.person,
               color: Colors.white,
               size: 26,
             ),
-          ),
+          )
+              : const SizedBox(width: 26),
         ],
       ),
     );

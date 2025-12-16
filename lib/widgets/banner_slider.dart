@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
 import '../theme/bhejdu_colors.dart';
 
 class BannerSlider extends StatefulWidget {
@@ -9,118 +13,133 @@ class BannerSlider extends StatefulWidget {
 }
 
 class _BannerSliderState extends State<BannerSlider> {
-  final PageController _controller = PageController();
-  int _currentPage = 0;
+  final PageController _pageController = PageController();
+  int currentIndex = 0;
 
-  final List<String> banners = [
-    "https://i.imgur.com/3cEY3qj.jpeg",
-    "https://i.imgur.com/nkN4vX6.jpeg",
-    "https://i.imgur.com/RkYx6nH.jpg",
+  /// STATIC FALLBACK BANNERS
+  List<String> banners = [
+    "assets/images/banner1.png",
+    "assets/images/banner2.png",
+    "assets/images/banner3.png",
   ];
+
+  bool loading = true;
+  Timer? autoPlayTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchBanners();
+  }
+
+  /// FETCH BANNERS FROM BACKEND
+  Future fetchBanners() async {
+    const url =
+        "https://darkslategrey-chicken-274271.hostingersite.com/api/get_banners.php";
+
+    try {
+      final res = await http.get(Uri.parse(url));
+      final data = jsonDecode(res.body);
+
+      if (data["status"] == "success") {
+        List<dynamic> list = data["banners"];
+
+        if (list.isNotEmpty) {
+          banners = list.map((b) => b["image"].toString()).toList();
+        }
+      }
+    } catch (e) {
+      print("Banner Load Error: $e");
+    }
+
+    /// Now start autoplay safely
+    setState(() => loading = false);
+    startAutoPlay();
+  }
+
+  void startAutoPlay() {
+    autoPlayTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (_pageController.hasClients && banners.isNotEmpty) {
+        currentIndex = (currentIndex + 1) % banners.length;
+        _pageController.animateToPage(
+          currentIndex,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    autoPlayTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return const SizedBox(
+        height: 160,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Stack(
+      alignment: Alignment.bottomCenter,
       children: [
-        // MAIN BANNER AREA
+        /// MAIN BANNER SLIDER
         SizedBox(
           height: 160,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: PageView.builder(
-              controller: _controller,
-              itemCount: banners.length,
-              onPageChanged: (i) => setState(() => _currentPage = i),
-              itemBuilder: (_, i) {
-                return Image.network(
-                  banners[i],
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: Colors.grey.shade300,
-                    child: const Icon(Icons.broken_image, size: 40),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-
-        // LEFT ARROW
-        Positioned(
-          left: 10,
-          top: 55,
-          child: _arrowButton(
-            Icons.arrow_back_ios_new_rounded,
-                () {
-              if (_currentPage > 0) {
-                _controller.previousPage(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              }
+          width: double.infinity,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: banners.length,
+            onPageChanged: (index) {
+              setState(() => currentIndex = index);
             },
-          ),
-        ),
-
-        // RIGHT ARROW
-        Positioned(
-          right: 10,
-          top: 55,
-          child: _arrowButton(
-            Icons.arrow_forward_ios_rounded,
-                () {
-              if (_currentPage < banners.length - 1) {
-                _controller.nextPage(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              }
-            },
-          ),
-        ),
-
-        // PAGE INDICATOR
-        Positioned(
-          bottom: 10,
-          left: 0,
-          right: 0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              banners.length,
-                  (i) => AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
+            itemBuilder: (context, index) {
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOut,
                 margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: _currentPage == i ? 12 : 6,
-                height: 6,
                 decoration: BoxDecoration(
-                  color: _currentPage == i
-                      ? Colors.white
-                      : Colors.white.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(18),
+                  image: DecorationImage(
+                    image: banners[index].startsWith("http")
+                        ? NetworkImage(banners[index])
+                        : AssetImage(banners[index]) as ImageProvider,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
-      ],
-    );
-  }
 
-  Widget _arrowButton(IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: CircleAvatar(
-        radius: 18,
-        backgroundColor: Colors.white.withOpacity(0.85),
-        child: Icon(
-          icon,
-          size: 18,
-          color: BhejduColors.textDark,
-        ),
-      ),
+        /// DOT INDICATORS
+        Positioned(
+          bottom: 12,
+          child: Row(
+            children: List.generate(banners.length, (index) {
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                height: 8,
+                width: currentIndex == index ? 20 : 8,
+                decoration: BoxDecoration(
+                  color: currentIndex == index
+                      ? BhejduColors.primaryBlue
+                      : Colors.white.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              );
+            }),
+          ),
+        )
+      ],
     );
   }
 }

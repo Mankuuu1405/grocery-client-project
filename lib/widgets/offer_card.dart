@@ -4,19 +4,20 @@ import '../theme/bhejdu_colors.dart';
 class OfferCard extends StatelessWidget {
   final String title;
   final Color bgColor;
-  final VoidCallback onTap;
+  final VoidCallback? onTap; // ✅ MADE OPTIONAL
 
   const OfferCard({
     super.key,
     required this.title,
     required this.bgColor,
-    required this.onTap,
+    this.onTap, // ✅ NOT REQUIRED NOW
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: onTap ?? () {}, // ✅ SAFE DEFAULT
+      borderRadius: BorderRadius.circular(14),
       child: Container(
         width: 110,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),

@@ -10,8 +10,19 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
-  int qty1 = 1;
-  int qty2 = 2;
+  /// CART LIST (dynamic)
+  List<Map<String, dynamic>> cartItems = [
+    {
+      "name": "Fresh Tomatoes",
+      "price": 40,
+      "qty": 1,
+    },
+    {
+      "name": "Premium Rice",
+      "price": 60,
+      "qty": 1,
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -20,48 +31,44 @@ class _CartPageState extends State<CartPage> {
 
       body: Column(
         children: [
-          /// 🔵 Custom AppBar
           BhejduAppBar(
             title: "My Cart",
             showBack: true,
             onBackTap: () => Navigator.pop(context),
-            onLoginTap: () {},
+
           ),
 
           Expanded(
-            child: SingleChildScrollView(
+            child: cartItems.isEmpty
+                ? _emptyCart()
+                : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _cartItem(
-                    name: "Fresh Tomatoes",
-                    price: 40,
-                    qty: qty1,
-                    onAdd: () => setState(() => qty1++),
-                    onRemove: () {
-                      if (qty1 > 1) setState(() => qty1--);
-                    },
-                  ),
+                  for (int i = 0; i < cartItems.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: _cartItem(
+                        name: cartItems[i]["name"],
+                        price: cartItems[i]["price"],
+                        qty: cartItems[i]["qty"],
+                        onAdd: () {
+                          setState(() => cartItems[i]["qty"]++);
+                        },
+                        onRemove: () {
+                          if (cartItems[i]["qty"] > 1) {
+                            setState(() => cartItems[i]["qty"]--);
+                          } else {
+                            setState(() => cartItems.removeAt(i));
+                          }
+                        },
+                      ),
+                    ),
 
-                  const SizedBox(height: 14),
-
-                  _cartItem(
-                    name: "Premium Rice",
-                    price: 60,
-                    qty: qty2,
-                    onAdd: () => setState(() => qty2++),
-                    onRemove: () {
-                      if (qty2 > 1) setState(() => qty2--);
-                    },
-                  ),
-
-                  const SizedBox(height: 25),
-
+                  const SizedBox(height: 20),
                   _priceDetails(),
-
                   const SizedBox(height: 30),
 
-                  /// 🟦 Checkout Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -96,7 +103,17 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  /// ---------------- CART ITEM WIDGET ----------------
+  /// EMPTY CART UI
+  Widget _emptyCart() {
+    return const Center(
+      child: Text(
+        "Your cart is empty",
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  /// CART ITEM UI
   Widget _cartItem({
     required String name,
     required int price,
@@ -119,7 +136,6 @@ class _CartPageState extends State<CartPage> {
       ),
       child: Row(
         children: [
-          /// Product thumbnail
           Container(
             height: 60,
             width: 60,
@@ -133,7 +149,6 @@ class _CartPageState extends State<CartPage> {
 
           const SizedBox(width: 14),
 
-          /// Name + Price
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,7 +173,6 @@ class _CartPageState extends State<CartPage> {
             ),
           ),
 
-          /// Quantity selector
           Row(
             children: [
               GestureDetector(
@@ -205,9 +219,15 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  /// ---------------- PRICE DETAILS BOX ----------------
+  /// PRICE DETAILS
   Widget _priceDetails() {
-    int subtotal = (qty1 * 40) + (qty2 * 60);
+    int subtotal = 0;
+
+    for (var item in cartItems) {
+      subtotal += (item["qty"] as int) * (item["price"] as int);
+    }
+
+
     int delivery = subtotal > 500 ? 0 : 40;
     int total = subtotal + delivery;
 
@@ -228,8 +248,8 @@ class _CartPageState extends State<CartPage> {
         children: [
           _priceRow("Subtotal", "₹$subtotal"),
           const SizedBox(height: 8),
-          _priceRow(
-              "Delivery Fee", delivery == 0 ? "FREE" : "₹$delivery",
+          _priceRow("Delivery Fee",
+              delivery == 0 ? "FREE" : "₹$delivery",
               isGreen: delivery == 0),
           const SizedBox(height: 8),
           const Divider(),
@@ -256,7 +276,8 @@ class _CartPageState extends State<CartPage> {
         Text(
           value,
           style: TextStyle(
-            color: isGreen ? BhejduColors.successGreen : BhejduColors.textDark,
+            color:
+            isGreen ? BhejduColors.successGreen : BhejduColors.textDark,
             fontSize: 16,
             fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
           ),

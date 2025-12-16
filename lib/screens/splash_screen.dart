@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -33,12 +34,26 @@ class _SplashScreenState extends State<SplashScreen>
 
     _ctrl.forward();
 
-    // after splash, navigate to login (or home) - change duration as needed
+    // 🔥 Check login status after splash animation
     Timer(const Duration(milliseconds: 1800), () {
-      // if you want to go to login first:
-      Navigator.of(context).pushReplacementNamed('/login');
-      // or go directly to home: Navigator.of(context).pushReplacementNamed('/home');
+      checkLoginStatus();
     });
+  }
+
+  /// ---------------- CHECK LOGIN STATUS ----------------
+  Future<void> checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? userId = prefs.getInt("user_id");
+
+    if (!mounted) return;
+
+    if (userId != null) {
+      // User already logged in
+      Navigator.of(context).pushReplacementNamed('/home');
+    } else {
+      // User not logged in
+      Navigator.of(context).pushReplacementNamed('/login');
+    }
   }
 
   @override
@@ -49,7 +64,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    // safe fallback in case asset is not available
     const String assetPath = 'assets/images/bhejdu_logo.png';
 
     return Scaffold(
@@ -62,7 +76,6 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // try to load the logo image, fallback to text if missing
                 SizedBox(
                   width: 220,
                   height: 220,
@@ -70,26 +83,31 @@ class _SplashScreenState extends State<SplashScreen>
                     assetPath,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      // fallback minimal logo build
                       return Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
-                          Icon(Icons.shopping_cart_outlined,
-                              size: 72, color: Color(0xFF0A5DB6)),
+                          Icon(
+                            Icons.shopping_cart_outlined,
+                            size: 72,
+                            color: Color(0xFF0A5DB6),
+                          ),
                           SizedBox(height: 12),
                           Text(
                             'Bhejdu',
                             style: TextStyle(
-                                fontSize: 34,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0A5DB6)),
+                              fontSize: 34,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0A5DB6),
+                            ),
                           ),
                           SizedBox(height: 6),
                           Text(
                             'BEYOND INSTANT — PERFECTLY TIMED',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                                fontSize: 12, color: Color(0xFF43C268)),
+                              fontSize: 12,
+                              color: Color(0xFF43C268),
+                            ),
                           ),
                         ],
                       );

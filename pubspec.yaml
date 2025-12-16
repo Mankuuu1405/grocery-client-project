@@ -10,21 +10,24 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
   cupertino_icons: ^1.0.8
 
   # ⭐ REQUIRED FOR PHP API & HOSTINGER
   http: ^1.6.0
 
-  # ⭐ GOOD — ONLY KEEP MAIN SHARED PREFERENCES (remove platform-specific)
+  # ⭐ FOR LOGIN, SIGNUP, PROFILE
   shared_preferences: ^2.3.2
 
-  # ⭐ REQUIRED FOR IMAGE PICKING & CROPPING
+  # ⭐ FOR IMAGE PICK & CROP (Edit Profile Feature)
   image_picker: ^1.2.1
   image_cropper: ^11.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  # ⭐ KEEP EXACT VERSION (DO NOT UPGRADE TO 6.0.0 — BREAKS FLUTTER)
   flutter_lints: ^2.0.3
 
 flutter:

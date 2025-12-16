@@ -17,7 +17,7 @@ class NotificationsPage extends StatelessWidget {
             title: "Notifications",
             showBack: true,
             onBackTap: () => Navigator.pop(context),
-            onLoginTap: () {}, // optional
+
           ),
 
           Expanded(

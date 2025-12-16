@@ -30,19 +30,35 @@ class _ProductVariantsPageState extends State<ProductVariantsPage> {
   }
 
   Future fetchVariants() async {
-    final response = await http.post(
-      Uri.parse("https://YOUR_DOMAIN.com/get_variants.php"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"product_id": widget.productId}),
-    );
+    final url =
+        "https://darkslategrey-chicken-274271.hostingersite.com/api/get_variants.php";
 
-    final data = jsonDecode(response.body);
+    try {
+      print("📤 SENDING PRODUCT ID: ${widget.productId}");
 
-    if (data["status"] == "success") {
-      setState(() {
-        variants = data["variants"];
-        loading = false;
-      });
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "product_id": int.parse(widget.productId.toString()), // ✅ FIXED
+        }),
+      );
+
+      print("📥 VARIANTS API RESPONSE: ${response.body}");
+
+      final data = jsonDecode(response.body);
+
+      if (data["status"] == "success") {
+        setState(() {
+          variants = data["variants"];
+          loading = false;
+        });
+      } else {
+        setState(() => loading = false);
+      }
+    } catch (e) {
+      print("❌ ERROR in get_variants API: $e");
+      setState(() => loading = false);
     }
   }
 
@@ -61,6 +77,18 @@ class _ProductVariantsPageState extends State<ProductVariantsPage> {
           Expanded(
             child: loading
                 ? const Center(child: CircularProgressIndicator())
+
+                : variants.isEmpty
+                ? const Center(
+              child: Text(
+                "No variants found for this product.",
+                style: TextStyle(
+                  color: BhejduColors.textGrey,
+                  fontSize: 16,
+                ),
+              ),
+            )
+
                 : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: variants.length,
@@ -73,12 +101,10 @@ class _ProductVariantsPageState extends State<ProductVariantsPage> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: BhejduColors.white,
-                    borderRadius:
-                    BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color:
-                        Colors.black12.withOpacity(0.06),
+                        color: Colors.black12.withOpacity(0.06),
                         blurRadius: 6,
                         offset: const Offset(1, 2),
                       ),
@@ -96,33 +122,28 @@ class _ProductVariantsPageState extends State<ProductVariantsPage> {
                             item["size"],
                             style: const TextStyle(
                               fontSize: 18,
-                              fontWeight:
-                              FontWeight.w600,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           Text(
                             "₹${item["price"]}",
                             style: const TextStyle(
                               fontSize: 16,
-                              fontWeight:
-                              FontWeight.w700,
-                              color:
-                              BhejduColors.primaryBlue,
+                              fontWeight: FontWeight.w700,
+                              color: BhejduColors.primaryBlue,
                             ),
                           ),
                         ],
                       ),
                       ElevatedButton(
                         onPressed: () {},
-                        style:
-                        ElevatedButton.styleFrom(
+                        style: ElevatedButton.styleFrom(
                           backgroundColor:
                           BhejduColors.primaryBlue,
                         ),
                         child: const Text(
                           "ADD",
-                          style:
-                          TextStyle(color: Colors.white),
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
                     ],

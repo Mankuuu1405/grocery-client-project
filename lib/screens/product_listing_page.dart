@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
-import '../widgets/product_tile.dart';
+import '../widgets/product_horizontal_card.dart'; // ⭐ CHANGED
 import 'product_variants_page.dart';
 
 class ProductListingPage extends StatefulWidget {
@@ -32,23 +32,37 @@ class _ProductListingPageState extends State<ProductListingPage> {
   }
 
   Future fetchProducts() async {
-    final response = await http.post(
-      Uri.parse("https://YOUR_DOMAIN.com/get_products.php"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"category_id": widget.categoryId}),
-    );
+    const String url =
+        "https://darkslategrey-chicken-274271.hostingersite.com/api/get_products.php";
 
-    final data = jsonDecode(response.body);
+    try {
+      print("📤 SENDING CATEGORY ID: ${widget.categoryId}");
 
-    if (data["status"] == "success") {
-      setState(() {
-        products = data["products"];
-        loading = false;
-      });
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "category_id": widget.categoryId,
+        }),
+      );
+
+      print("📥 API RESPONSE: ${response.body}");
+
+      final data = jsonDecode(response.body);
+
+      if (data["status"] == "success") {
+        setState(() {
+          products = data["products"];
+          loading = false;
+        });
+      } else {
+        setState(() => loading = false);
+      }
+    } catch (e) {
+      print("❌ Product API Error: $e");
+      setState(() => loading = false);
     }
   }
-
-  IconData getIcon() => Icons.shopping_bag;
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +70,7 @@ class _ProductListingPageState extends State<ProductListingPage> {
       backgroundColor: BhejduColors.bgLight,
       body: Column(
         children: [
+          /// 🔵 APP BAR
           BhejduAppBar(
             title: widget.categoryName,
             showBack: true,
@@ -65,6 +80,18 @@ class _ProductListingPageState extends State<ProductListingPage> {
           Expanded(
             child: loading
                 ? const Center(child: CircularProgressIndicator())
+
+                : products.isEmpty
+                ? const Center(
+              child: Text(
+                "No products found in this category.",
+                style: TextStyle(
+                  color: BhejduColors.textGrey,
+                  fontSize: 16,
+                ),
+              ),
+            )
+
                 : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: products.length,
@@ -73,25 +100,29 @@ class _ProductListingPageState extends State<ProductListingPage> {
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 14),
-                  child: GestureDetector(
-                    onTap: () {
+
+                  /// ⭐ IMAGE BASED PRODUCT CARD
+                  child: ProductHorizontalCard(
+                    title: item["name"],
+                    price: "₹${item["price"]}",
+                    image: item["image"], // ✅ FULL IMAGE URL
+
+                    onTapProduct: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => ProductVariantsPage(
-                            productId: item["id"],
+                            productId:
+                            int.parse(item["id"].toString()),
                             productName: item["name"],
                           ),
                         ),
                       );
                     },
-                    child: ProductTile(
-                      title: item["name"],
-                      subtitle: "Best Quality",
-                      price: "₹${item["price"]}",
-                      icon: getIcon(),
-                      onTap: () {},
-                    ),
+
+                    onAdd: () {
+                      // 🛒 Add to cart (future)
+                    },
                   ),
                 );
               },

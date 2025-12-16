@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';                           // ✅ Added
-import 'package:http/http.dart' as http;         // ✅ Added
-import 'package:shared_preferences/shared_preferences.dart';  // ⭐ ADDED
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
@@ -17,7 +17,10 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailCtrl = TextEditingController();
   final TextEditingController passCtrl = TextEditingController();
 
-  bool isLoading = false; // ✅ Added loader
+  bool isLoading = false;
+
+  /// 👁 Password visibility
+  bool passwordVisible = false;
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +29,11 @@ class _LoginPageState extends State<LoginPage> {
 
       body: Column(
         children: [
-          /// TOP APP BAR
+          /// 🔵 APP BAR (NO ACCOUNT ICON ON LOGIN)
           BhejduAppBar(
             title: "Login",
             showBack: true,
+            showAccountIcon: false, // ✅ FIXED
             onBackTap: () => Navigator.pop(context),
           ),
 
@@ -41,11 +45,10 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   const Text(
-                    "Welcome Back 👋",
+                    "Welcome 👋",
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 30,
                       fontWeight: FontWeight.w700,
                       color: BhejduColors.textDark,
                     ),
@@ -63,71 +66,71 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 30),
 
-                  /// EMAIL FIELD
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 5,
-                          offset: Offset(2, 3),
-                        ),
-                      ],
+                  /// EMAIL
+                  _inputField(
+                    controller: emailCtrl,
+                    hint: "Email",
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// PASSWORD
+                  _inputField(
+                    controller: passCtrl,
+                    hint: "Password",
+                    obscure: !passwordVisible,
+                    suffix: IconButton(
+                      icon: Icon(
+                        passwordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: BhejduColors.primaryBlue,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          passwordVisible = !passwordVisible;
+                        });
+                      },
                     ),
-                    child: TextField(
-                      controller: emailCtrl,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: "Email or Mobile",
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  /// FORGOT PASSWORD
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, "/forgot-password");
+                      },
+                      child: const Text(
+                        "Forgot Password?",
+                        style: TextStyle(
+                          color: BhejduColors.primaryBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  /// PASSWORD FIELD
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 5,
-                          offset: Offset(2, 3),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: passCtrl,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: "Password",
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
                   /// LOGIN BUTTON
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: isLoading ? null : loginUser,   // ✅ Updated
+                      onPressed: isLoading ? null : loginUser,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: BhejduColors.primaryBlue,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding:
+                        const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                       child: isLoading
-                          ? const CircularProgressIndicator(color: Colors.white) // ✅ Loader
+                          ? const CircularProgressIndicator(
+                          color: Colors.white)
                           : const Text(
                         "Login",
                         style: TextStyle(
@@ -141,13 +144,14 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 16),
 
-                  /// GO TO SIGNUP
+                  /// SIGN UP LINK
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text(
                         "Don't have an account?",
-                        style: TextStyle(color: BhejduColors.textGrey),
+                        style:
+                        TextStyle(color: BhejduColors.textGrey),
                       ),
                       TextButton(
                         onPressed: () {
@@ -163,7 +167,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ],
                   ),
-
                 ],
               ),
             ),
@@ -173,9 +176,39 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // --------------------------------------------------------
-  // ✅ LOGIN FUNCTION (PHP + MySQL)
-  // --------------------------------------------------------
+  /// ------------------ INPUT FIELD ------------------
+  Widget _inputField({
+    required TextEditingController controller,
+    required String hint,
+    bool obscure = false,
+    Widget? suffix,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 5,
+            offset: Offset(2, 3),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: obscure,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          hintText: hint,
+          suffixIcon: suffix,
+        ),
+      ),
+    );
+  }
+
+  /// ------------------ LOGIN LOGIC ------------------
   Future<void> loginUser() async {
     final email = emailCtrl.text.trim();
     final password = passCtrl.text.trim();
@@ -208,17 +241,16 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => isLoading = false);
 
       if (result["status"] == "success") {
-
-        // ⭐⭐⭐ SAVE USER ID LOCALLY — ADDED ⭐⭐⭐
-        SharedPreferences prefs = await SharedPreferences.getInstance();
+        final prefs = await SharedPreferences.getInstance();
         await prefs.setInt("user_id", result["user_id"]);
+        await prefs.setBool("is_logged_in", true);
 
-        // ⭐ REDIRECT TO HOME PAGE
         Navigator.pushNamed(context, "/home");
-
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result["message"] ?? "Login failed")),
+          SnackBar(
+              content:
+              Text(result["message"] ?? "Login failed")),
         );
       }
     } catch (e) {

@@ -17,21 +17,20 @@ class OrdersPage extends StatelessWidget {
             title: "My Orders",
             showBack: true,
             onBackTap: () => Navigator.pop(context),
-            onLoginTap: () => Navigator.pushNamed(context, "/login"),
           ),
 
           /// PAGE CONTENT
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(16),
-
               children: [
                 _orderTile(
                   orderId: "#ORD1023",
                   date: "3 Dec 2025",
                   status: "Delivered",
                   color: BhejduColors.successGreen,
-                  onTrack: () => Navigator.pushNamed(context, "/orderTracking"),
+                  onTrack: () =>
+                      Navigator.pushNamed(context, "/orderTracking"),
                 ),
 
                 _orderTile(
@@ -39,7 +38,8 @@ class OrdersPage extends StatelessWidget {
                   date: "1 Dec 2025",
                   status: "Out for Delivery",
                   color: BhejduColors.offerBlue,
-                  onTrack: () => Navigator.pushNamed(context, "/orderTracking"),
+                  onTrack: () =>
+                      Navigator.pushNamed(context, "/orderTracking"),
                 ),
 
                 _orderTile(
@@ -47,7 +47,8 @@ class OrdersPage extends StatelessWidget {
                   date: "29 Nov 2025",
                   status: "Packed",
                   color: BhejduColors.offerOrange,
-                  onTrack: () => Navigator.pushNamed(context, "/orderTracking"),
+                  onTrack: () =>
+                      Navigator.pushNamed(context, "/orderTracking"),
                 ),
 
                 _orderTile(
@@ -55,7 +56,8 @@ class OrdersPage extends StatelessWidget {
                   date: "27 Nov 2025",
                   status: "Pending",
                   color: BhejduColors.textGrey,
-                  onTrack: () => Navigator.pushNamed(context, "/orderTracking"),
+                  onTrack: () =>
+                      Navigator.pushNamed(context, "/orderTracking"),
                 ),
               ],
             ),
@@ -71,7 +73,7 @@ class OrdersPage extends StatelessWidget {
     required String date,
     required String status,
     required Color color,
-    required Function() onTrack,
+    required VoidCallback onTrack,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -87,7 +89,6 @@ class OrdersPage extends StatelessWidget {
           ),
         ],
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -106,7 +107,9 @@ class OrdersPage extends StatelessWidget {
               Text(
                 date,
                 style: const TextStyle(
-                    color: BhejduColors.textGrey, fontSize: 14),
+                  color: BhejduColors.textGrey,
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
@@ -115,7 +118,8 @@ class OrdersPage extends StatelessWidget {
 
           /// Status Badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: color.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
@@ -137,14 +141,18 @@ class OrdersPage extends StatelessWidget {
             child: GestureDetector(
               onTap: onTrack,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: BhejduColors.primaryBlue,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
                   "Track Order",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

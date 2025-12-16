@@ -17,6 +17,7 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController passwordCtrl = TextEditingController();
 
   bool isLoading = false;
+  bool passwordVisible = false;
 
   @override
   Widget build(BuildContext context) {
@@ -28,17 +29,21 @@ class _SignupPageState extends State<SignupPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              /// 🔙 Back Button
               GestureDetector(
                 onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.arrow_back,
-                    size: 26, color: BhejduColors.primaryBlue),
+                child: const Icon(
+                  Icons.arrow_back,
+                  size: 26,
+                  color: BhejduColors.primaryBlue,
+                ),
               ),
 
               const SizedBox(height: 25),
 
-              /// 📝 Title
+              Image.asset("assets/images/logo.png", height: 42),
+
+              const SizedBox(height: 25),
+
               const Text(
                 "Create Account",
                 style: TextStyle(
@@ -47,19 +52,16 @@ class _SignupPageState extends State<SignupPage> {
                   color: BhejduColors.textDark,
                 ),
               ),
+
               const SizedBox(height: 8),
 
               const Text(
                 "Signup to get started with our grocery app",
-                style: TextStyle(
-                  fontSize: 15,
-                  color: BhejduColors.textGrey,
-                ),
+                style: TextStyle(fontSize: 15, color: BhejduColors.textGrey),
               ),
 
               const SizedBox(height: 35),
 
-              /// 🧍 Full Name
               _inputField(
                 controller: nameCtrl,
                 label: "Full Name",
@@ -68,7 +70,6 @@ class _SignupPageState extends State<SignupPage> {
 
               const SizedBox(height: 20),
 
-              /// 📧 Email
               _inputField(
                 controller: emailCtrl,
                 label: "Email",
@@ -77,7 +78,6 @@ class _SignupPageState extends State<SignupPage> {
 
               const SizedBox(height: 20),
 
-              /// 📱 Mobile
               _inputField(
                 controller: mobileCtrl,
                 label: "Mobile Number",
@@ -87,17 +87,10 @@ class _SignupPageState extends State<SignupPage> {
 
               const SizedBox(height: 20),
 
-              /// 🔐 Password
-              _inputField(
-                controller: passwordCtrl,
-                label: "Password",
-                icon: Icons.lock,
-                obscure: true,
-              ),
+              _passwordField(),
 
               const SizedBox(height: 35),
 
-              /// 🔵 SIGNUP BUTTON
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -114,16 +107,16 @@ class _SignupPageState extends State<SignupPage> {
                       : const Text(
                     "Create Account",
                     style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600),
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
 
               const SizedBox(height: 20),
 
-              /// Already have account?
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -152,7 +145,6 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  /// -------------------------- INPUT FIELD WIDGET --------------------------
   Widget _inputField({
     required TextEditingController controller,
     required String label,
@@ -186,7 +178,42 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  /// -------------------------- SIGNUP LOGIC --------------------------
+  Widget _passwordField() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: BhejduColors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 6,
+            offset: Offset(2, 3),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: passwordCtrl,
+        obscureText: !passwordVisible,
+        decoration: InputDecoration(
+          labelText: "Password",
+          border: InputBorder.none,
+          icon: const Icon(Icons.lock, color: BhejduColors.primaryBlue),
+          suffixIcon: IconButton(
+            icon: Icon(
+              passwordVisible ? Icons.visibility : Icons.visibility_off,
+              color: BhejduColors.primaryBlue,
+            ),
+            onPressed: () {
+              setState(() => passwordVisible = !passwordVisible);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ⭐⭐⭐ FINAL WORKING SIGNUP FUNCTION ⭐⭐⭐
   void signupUser() async {
     setState(() => isLoading = true);
 
@@ -206,24 +233,47 @@ class _SignupPageState extends State<SignupPage> {
         }),
       );
 
-      final data = jsonDecode(response.body);
+      print("STATUS CODE: ${response.statusCode}");
+      print("RAW RESPONSE: ${response.body}");
+
+      dynamic data;
+
+      try {
+        data = jsonDecode(response.body);
+      } catch (jsonError) {
+        print("JSON ERROR: $jsonError");
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invalid response from server.")),
+        );
+
+        setState(() => isLoading = false);
+        return;
+      }
 
       setState(() => isLoading = false);
 
       if (data["status"] == "success") {
-        /// ------------------------------------------
-        /// FIXED 👉 Go to LOGIN instead of HOME
-        /// ------------------------------------------
-        Navigator.pushNamed(context, "/login");
+        Navigator.pushNamed(
+          context,
+          "/otp",
+          arguments: {
+            "user_id": data["user_id"],
+            "email": emailCtrl.text.trim(),
+          },
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(data["message"])),
         );
       }
     } catch (e) {
+      print("EXCEPTION: $e");
+
       setState(() => isLoading = false);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Server error. Please try again.")),
+        SnackBar(content: Text("Error: $e")),
       );
     }
   }

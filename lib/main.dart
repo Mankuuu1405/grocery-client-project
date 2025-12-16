@@ -15,7 +15,10 @@ import 'screens/orders_page.dart';
 import 'screens/profile_page.dart';
 import 'screens/order_placed_page.dart';
 import 'screens/edit_profile_page.dart';
-
+import 'screens/otp_page.dart';                 // Signup OTP Page
+import 'screens/forgot_password_page.dart';    // ⭐ Forgot Password
+import 'screens/reset_otp_page.dart';          // ⭐ Reset Password OTP
+import 'screens/reset_password_page.dart';     // ⭐ New Password
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -33,7 +36,6 @@ class BhejduApp extends StatelessWidget {
     return MaterialApp(
       title: "Bhejdu Grocery",
       debugShowCheckedModeBanner: false,
-
       theme: AppTheme.lightTheme,
 
       initialRoute: "/",
@@ -51,23 +53,58 @@ class BhejduApp extends StatelessWidget {
         "/profile": (context) => const ProfilePage(),
         "/order-placed": (context) => const OrderPlacedPage(),
 
-        /// ⭐ EDIT PROFILE ROUTE WITH ARGUMENTS
+        // ⭐ SIGNUP OTP PAGE ROUTE
+        "/otp": (context) {
+          final args =
+          ModalRoute.of(context)!.settings.arguments as Map;
+
+          return OtpPage(
+            userId: args["user_id"],
+            email: args["email"],
+          );
+        },
+
+        // ⭐ FORGOT PASSWORD PAGE
+        "/forgot-password": (context) => const ForgotPasswordPage(),
+
+        // ⭐ RESET PASSWORD OTP PAGE
+        "/reset-otp": (context) {
+          final args =
+          ModalRoute.of(context)!.settings.arguments as Map;
+
+          return ResetOtpPage(
+            userId: args["user_id"],
+            email: args["email"],
+          );
+        },
+
+        // ⭐ RESET PASSWORD PAGE (New Password)
+        "/reset-password": (context) {
+          final args =
+          ModalRoute.of(context)!.settings.arguments as Map;
+
+          return ResetPasswordPage(
+            userId: args["user_id"],
+          );
+        },
+
+        // ⭐ EDIT PROFILE PAGE
         "/edit-profile": (context) {
           final Map userData =
           ModalRoute.of(context)!.settings.arguments as Map;
           return EditProfilePage(userData: userData);
         },
 
-        /// ⭐ UPDATED PRODUCT LIST ROUTE (NOW ACCEPTS CATEGORY ID + NAME)
+        // ⭐ PRODUCT LIST PAGE
         "/product-list": (context) {
-          final Map args =
-          ModalRoute.of(context)!.settings.arguments as Map;
+          final Map args = ModalRoute.of(context)!.settings.arguments as Map;
 
           return ProductListingPage(
-            categoryId: args["id"],
+            categoryId: int.parse(args["id"].toString()),  // ⭐ FIXED
             categoryName: args["name"],
           );
         },
+
       },
     );
   }

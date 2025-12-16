@@ -1,8 +1,67 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 import '../theme/bhejdu_colors.dart';
 
-class AppDrawer extends StatelessWidget {
+class AppDrawer extends StatefulWidget {
   const AppDrawer({super.key});
+
+  @override
+  State<AppDrawer> createState() => _AppDrawerState();
+}
+
+class _AppDrawerState extends State<AppDrawer> {
+  String userName = "Guest User";
+  String userEmail = "guest@example.com";
+  String userImage = ""; // empty in signup
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserData();
+  }
+
+  Future<void> loadUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    int? userId = prefs.getInt("user_id");
+
+    // Load from local first
+    userName = prefs.getString("user_name") ?? "Guest User";
+    userEmail = prefs.getString("user_email") ?? "guest@example.com";
+    userImage = prefs.getString("user_image") ?? "";
+
+    // ---- FETCH FROM DATABASE (LIVE USER DATA) ----
+    if (userId != null) {
+      final response = await http.get(
+        Uri.parse("https://darkslategrey-chicken-274271.hostingersite.com/api/get_user.php?user_id=$userId"),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        setState(() {
+          userName = data["name"] ?? userName;
+          userEmail = data["email"] ?? userEmail;
+
+          /// If profile_image is NULL → keep blank
+          userImage = (data["profile_image"] != null &&
+              data["profile_image"].toString().isNotEmpty)
+              ? "https://darkslategrey-chicken-274271.hostingersite.com/uploads/${data["profile_image"]}"
+              : "";
+        });
+
+        // Save updated values locally
+        prefs.setString("user_name", userName);
+        prefs.setString("user_email", userEmail);
+        prefs.setString("user_image", userImage);
+      }
+    }
+
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,7 +69,6 @@ class AppDrawer extends StatelessWidget {
       backgroundColor: BhejduColors.white,
       child: ListView(
         padding: EdgeInsets.zero,
-
         children: [
           // -------------------- HEADER --------------------
           DrawerHeader(
@@ -18,21 +76,29 @@ class AppDrawer extends StatelessWidget {
               color: BhejduColors.primaryBlue,
             ),
             child: Row(
-              children: const [
+              children: [
+                // PROFILE IMAGE
                 CircleAvatar(
                   radius: 28,
                   backgroundColor: Colors.white,
-                  child: Icon(
+                  backgroundImage:
+                  (userImage.isNotEmpty) ? NetworkImage(userImage) : null,
+                  child: userImage.isEmpty
+                      ? const Icon(
                     Icons.person,
                     color: BhejduColors.primaryBlue,
                     size: 34,
-                  ),
+                  )
+                      : null,
                 ),
-                SizedBox(width: 16),
+
+                const SizedBox(width: 16),
+
+                // USER DETAILS
                 Expanded(
                   child: Text(
-                    "John Doe\njohn@example.com",
-                    style: TextStyle(
+                    "$userName\n$userEmail",
+                    style: const TextStyle(
                       color: Colors.white,
                       height: 1.4,
                       fontSize: 15,
@@ -45,65 +111,56 @@ class AppDrawer extends StatelessWidget {
           ),
 
           // -------------------- MENU ITEMS --------------------
-          _drawerItem(
-            context,
-            icon: Icons.home,
-            label: "Home",
-            route: "/home",
+          _drawerItem(context,
+              icon: Icons.home, label: "Home", route: "/home"),
+          _drawerItem(context,
+              icon: Icons.grid_view, label: "Categories", route: "/categories"),
+          _drawerItem(context,
+              icon: Icons.shopping_bag, label: "My Orders", route: "/orders"),
+          _drawerItem(context,
+              icon: Icons.shopping_cart, label: "My Cart", route: "/cart"),
+          _drawerItem(context,
+              icon: Icons.location_on,
+              label: "Delivery Address",
+              route: "/address"),
+          _drawerItem(context,
+              icon: Icons.person, label: "My Profile", route: "/profile"),
+          _drawerItem(context,
+              icon: Icons.notifications,
+              label: "Notifications",
+              route: "/notifications"),
+          _drawerItem(context,
+              icon: Icons.account_balance_wallet,
+              label: "Wallet",
+              route: "/wallet"),
+
+          const Divider(height: 36),
+
+          // -------------------- PRIVACY POLICY --------------------
+          ListTile(
+            leading:
+            const Icon(Icons.privacy_tip, color: BhejduColors.primaryBlue),
+            title: const Text("Privacy Policy"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, "/privacy");
+            },
           ),
 
-          _drawerItem(
-            context,
-            icon: Icons.grid_view,
-            label: "Categories",
-            route: "/categories",
-          ),
-
-          _drawerItem(
-            context,
-            icon: Icons.shopping_bag,
-            label: "My Orders",
-            route: "/orders",
-          ),
-
-          _drawerItem(
-            context,
-            icon: Icons.shopping_cart,
-            label: "My Cart",
-            route: "/cart",
-          ),
-
-          _drawerItem(
-            context,
-            icon: Icons.location_on,
-            label: "Delivery Address",
-            route: "/address",
-          ),
-
-          _drawerItem(
-            context,
-            icon: Icons.person,
-            label: "My Profile",
-            route: "/profile",
-          ),
-
-          _drawerItem(
-            context,
-            icon: Icons.notifications,
-            label: "Notifications",
-            route: "/notifications",
-          ),
-
-          _drawerItem(
-            context,
-            icon: Icons.account_balance_wallet,
-            label: "Wallet",
-            route: "/wallet",
+          // -------------------- TERMS & CONDITIONS --------------------
+          ListTile(
+            leading:
+            const Icon(Icons.description, color: BhejduColors.primaryBlue),
+            title: const Text("Terms & Conditions"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, "/terms");
+            },
           ),
 
           const Divider(height: 36),
 
-          // LOGOUT
+          // -------------------- LOGOUT --------------------
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text(
@@ -113,7 +170,10 @@ class AppDrawer extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            onTap: () {
+            onTap: () async {
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              prefs.clear();
+
               Navigator.pushNamedAndRemoveUntil(
                   context, "/login", (route) => false);
             },
@@ -134,7 +194,7 @@ class AppDrawer extends StatelessWidget {
       leading: Icon(icon, color: BhejduColors.primaryBlue),
       title: Text(label, style: const TextStyle(fontSize: 15)),
       onTap: () {
-        Navigator.pop(context); // close drawer
+        Navigator.pop(context);
         Navigator.pushNamed(context, route);
       },
     );
