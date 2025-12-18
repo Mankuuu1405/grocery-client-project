@@ -22,6 +22,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
+
   final GlobalKey<ScaffoldState> _scaffoldKey =
   GlobalKey<ScaffoldState>();
 
@@ -32,6 +33,7 @@ class _HomePageState extends State<HomePage>
   List categories = [];
   List featured = [];
   List<String> banners = [];
+  List offers = []; // ✅ ADDED
 
   int _currentIndex = 0;
 
@@ -66,9 +68,13 @@ class _HomePageState extends State<HomePage>
       final featRes = await http.get(Uri.parse(
           "https://darkslategrey-chicken-274271.hostingersite.com/api/get_featured_products.php"));
 
+      final offerRes = await http.get(Uri.parse(
+          "https://darkslategrey-chicken-274271.hostingersite.com/api/get_offers.php"));
+
       final bData = jsonDecode(bannerRes.body);
       final cData = jsonDecode(catRes.body);
       final fData = jsonDecode(featRes.body);
+      final oData = jsonDecode(offerRes.body);
 
       if (bData["status"] == "success") {
         banners = (bData["banners"] as List)
@@ -83,6 +89,11 @@ class _HomePageState extends State<HomePage>
       if (fData["status"] == "success") {
         featured = fData["products"];
       }
+
+      if (oData["status"] == "success") {
+        offers = oData["offers"];
+      }
+
     } catch (e) {
       debugPrint("Home error: $e");
     }
@@ -143,35 +154,37 @@ class _HomePageState extends State<HomePage>
 
                     const SizedBox(height: 24),
 
-                    const Text(
-                      "Special Offers",
-                      style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 14),
-
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: const [
-                          OfferCard(
-                            title: "Flat 20% OFF\nFirst Order",
-                            bgColor: BhejduColors.offerOrange,
-                          ),
-                          SizedBox(width: 12),
-                          OfferCard(
-                            title: "Free Delivery\nAbove ₹500",
-                            bgColor: BhejduColors.successGreen,
-                          ),
-                          SizedBox(width: 12),
-                          OfferCard(
-                            title: "Buy 1 Get 1",
-                            bgColor: BhejduColors.offerBlue,
-                          ),
-                        ],
+                    /// 🔥 DYNAMIC OFFERS (ONLY CHANGE)
+                    if (offers.isNotEmpty) ...[
+                      const Text(
+                        "Special Offers",
+                        style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold),
                       ),
-                    ),
+                      const SizedBox(height: 14),
+
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: offers.map((o) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: OfferCard(
+                                title:
+                                "${o["title"]}\n${o["subtitle"]}",
+                                bgColor: Color(
+                                  int.parse(
+                                    o["bg_color"]
+                                        .replaceFirst("#", "0xff"),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
 
                     const SizedBox(height: 30),
 
