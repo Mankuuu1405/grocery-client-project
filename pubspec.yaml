@@ -13,16 +13,16 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
-  # REQUIRED FOR PHP API
+  # 🌐 HTTP (PHP API Integration)
   http: ^1.2.0
 
-  # PAYMENT GATEWAY
+  # 💳 PAYMENT GATEWAY (Razorpay)
   razorpay_flutter: ^1.3.7
 
-  # LOGIN, SIGNUP, PROFILE
+  # 🔐 LOGIN, SIGNUP, CART, SESSION
   shared_preferences: ^2.3.2
 
-  # IMAGE PICK & CROP
+  # 🖼 IMAGE PICK & CROP (Profile / Products)
   image_picker: ^1.2.1
   image_cropper: ^11.0.0
 
