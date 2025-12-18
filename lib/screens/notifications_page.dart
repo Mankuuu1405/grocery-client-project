@@ -1,62 +1,86 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
 import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
 
-class NotificationsPage extends StatelessWidget {
+class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
+
+  @override
+  State<NotificationsPage> createState() => _NotificationsPageState();
+}
+
+class _NotificationsPageState extends State<NotificationsPage> {
+  List notifications = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchNotifications();
+  }
+
+  Future<void> fetchNotifications() async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          "https://darkslategrey-chicken-274271.hostingersite.com/api/get_notifications.php",
+        ),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (data["status"] == "success") {
+        setState(() {
+          notifications = data["notifications"];
+          loading = false;
+        });
+      } else {
+        setState(() => loading = false);
+      }
+    } catch (e) {
+      debugPrint("Notification error: $e");
+      setState(() => loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: BhejduColors.bgLight,
-
       body: Column(
         children: [
-          /// 🔵 CUSTOM APP BAR
-          BhejduAppBar(
+          const BhejduAppBar(
             title: "Notifications",
             showBack: true,
-            onBackTap: () => Navigator.pop(context),
-
           ),
 
           Expanded(
-            child: ListView(
+            child: loading
+                ? const Center(child: CircularProgressIndicator())
+                : notifications.isEmpty
+                ? const Center(
+              child: Text(
+                "No notifications available",
+                style: TextStyle(
+                  color: BhejduColors.textGrey,
+                  fontSize: 16,
+                ),
+              ),
+            )
+                : ListView.builder(
               padding: const EdgeInsets.all(16),
-              children: [
-                /// 🔔 Order Status Notification
-                NotificationTile(
-                  icon: Icons.local_shipping,
-                  title: "Order Out for Delivery",
-                  message: "Your order #1245 is on the way.",
-                  time: "10 min ago",
-                  bgColor: BhejduColors.primaryBlueLight,
-                ),
-
-                NotificationTile(
-                  icon: Icons.check_circle,
-                  title: "Order Delivered",
-                  message: "Your order #1234 has been successfully delivered.",
-                  time: "1 hour ago",
-                  bgColor: BhejduColors.successGreenLight,
-                ),
-
-                NotificationTile(
-                  icon: Icons.local_offer,
-                  title: "Special Offer",
-                  message: "Flat 20% OFF on all grocery items today!",
-                  time: "3 hours ago",
-                  bgColor: BhejduColors.offerYellow.withOpacity(0.2),
-                ),
-
-                NotificationTile(
-                  icon: Icons.discount,
-                  title: "New Cashback Reward",
-                  message: "You earned ₹50 cashback on your last order.",
-                  time: "Yesterday",
-                  bgColor: BhejduColors.offerBlue.withOpacity(0.18),
-                ),
-              ],
+              itemCount: notifications.length,
+              itemBuilder: (context, index) {
+                final item = notifications[index];
+                return _NotificationTile(
+                  title: item["title"],
+                  message: item["message"],
+                  time: item["created_at"],
+                );
+              },
             ),
           ),
         ],
@@ -66,23 +90,18 @@ class NotificationsPage extends StatelessWidget {
 }
 
 /// ------------------------------------------------------
-/// 🔔 REUSABLE NOTIFICATION TILE WIDGET
+/// 🔔 NOTIFICATION TILE
 /// ------------------------------------------------------
 
-class NotificationTile extends StatelessWidget {
-  final IconData icon;
+class _NotificationTile extends StatelessWidget {
   final String title;
   final String message;
   final String time;
-  final Color bgColor;
 
-  const NotificationTile({
-    super.key,
-    required this.icon,
+  const _NotificationTile({
     required this.title,
     required this.message,
     required this.time,
-    required this.bgColor,
   });
 
   @override
@@ -103,20 +122,14 @@ class NotificationTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          /// ICON BOX
-          Container(
-            height: 55,
-            width: 55,
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: BhejduColors.primaryBlue, size: 30),
+          const Icon(
+            Icons.notifications,
+            color: BhejduColors.primaryBlue,
+            size: 28,
           ),
 
           const SizedBox(width: 16),
 
-          /// TEXT CONTENT
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

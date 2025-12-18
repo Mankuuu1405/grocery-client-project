@@ -25,24 +25,34 @@ class _SignupPageState extends State<SignupPage> {
       backgroundColor: BhejduColors.bgLight,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(22),
+          padding: const EdgeInsets.symmetric(horizontal: 22),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Icon(
-                  Icons.arrow_back,
-                  size: 26,
-                  color: BhejduColors.primaryBlue,
+              const SizedBox(height: 10),
+
+              /// 🔙 BACK BUTTON
+              Align(
+                alignment: Alignment.centerLeft,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(
+                    Icons.arrow_back,
+                    size: 26,
+                    color: BhejduColors.primaryBlue,
+                  ),
                 ),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 30),
 
-              Image.asset("assets/images/logo.png", height: 42),
+              /// 🔵 LOGO (SAME AS LOGIN)
+              Image.asset(
+                "assets/images/logo.png",
+                height: 90,
+              ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 14),
 
               const Text(
                 "Create Account",
@@ -53,15 +63,20 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
               const Text(
                 "Signup to get started with our grocery app",
-                style: TextStyle(fontSize: 15, color: BhejduColors.textGrey),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: BhejduColors.textGrey,
+                ),
               ),
 
               const SizedBox(height: 35),
 
+              /// FULL NAME
               _inputField(
                 controller: nameCtrl,
                 label: "Full Name",
@@ -70,6 +85,7 @@ class _SignupPageState extends State<SignupPage> {
 
               const SizedBox(height: 20),
 
+              /// EMAIL
               _inputField(
                 controller: emailCtrl,
                 label: "Email",
@@ -78,6 +94,7 @@ class _SignupPageState extends State<SignupPage> {
 
               const SizedBox(height: 20),
 
+              /// MOBILE
               _inputField(
                 controller: mobileCtrl,
                 label: "Mobile Number",
@@ -87,10 +104,12 @@ class _SignupPageState extends State<SignupPage> {
 
               const SizedBox(height: 20),
 
+              /// PASSWORD
               _passwordField(),
 
               const SizedBox(height: 35),
 
+              /// SIGNUP BUTTON
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -117,6 +136,7 @@ class _SignupPageState extends State<SignupPage> {
 
               const SizedBox(height: 20),
 
+              /// LOGIN LINK
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -125,7 +145,8 @@ class _SignupPageState extends State<SignupPage> {
                     style: TextStyle(color: BhejduColors.textGrey),
                   ),
                   GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, "/login"),
+                    onTap: () =>
+                        Navigator.pushNamed(context, "/login"),
                     child: const Text(
                       "Login",
                       style: TextStyle(
@@ -137,7 +158,7 @@ class _SignupPageState extends State<SignupPage> {
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -145,6 +166,7 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
+  /// ------------------ INPUT FIELD ------------------
   Widget _inputField({
     required TextEditingController controller,
     required String label,
@@ -178,6 +200,7 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
+  /// ------------------ PASSWORD FIELD ------------------
   Widget _passwordField() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -198,10 +221,13 @@ class _SignupPageState extends State<SignupPage> {
         decoration: InputDecoration(
           labelText: "Password",
           border: InputBorder.none,
-          icon: const Icon(Icons.lock, color: BhejduColors.primaryBlue),
+          icon: const Icon(Icons.lock,
+              color: BhejduColors.primaryBlue),
           suffixIcon: IconButton(
             icon: Icon(
-              passwordVisible ? Icons.visibility : Icons.visibility_off,
+              passwordVisible
+                  ? Icons.visibility
+                  : Icons.visibility_off,
               color: BhejduColors.primaryBlue,
             ),
             onPressed: () {
@@ -213,7 +239,7 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  // ⭐⭐⭐ FINAL WORKING SIGNUP FUNCTION ⭐⭐⭐
+  // ⭐⭐⭐ SIGNUP LOGIC (UNCHANGED) ⭐⭐⭐
   void signupUser() async {
     setState(() => isLoading = true);
 
@@ -233,21 +259,15 @@ class _SignupPageState extends State<SignupPage> {
         }),
       );
 
-      print("STATUS CODE: ${response.statusCode}");
-      print("RAW RESPONSE: ${response.body}");
-
       dynamic data;
-
       try {
         data = jsonDecode(response.body);
-      } catch (jsonError) {
-        print("JSON ERROR: $jsonError");
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Invalid response from server.")),
-        );
-
+      } catch (_) {
         setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text("Invalid response from server.")),
+        );
         return;
       }
 
@@ -268,10 +288,7 @@ class _SignupPageState extends State<SignupPage> {
         );
       }
     } catch (e) {
-      print("EXCEPTION: $e");
-
       setState(() => isLoading = false);
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );

@@ -3,14 +3,15 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../widgets/banner_slider.dart';
 import '../widgets/category_card.dart';
 import '../widgets/offer_card.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/top_app_bar.dart';
 import '../theme/bhejdu_colors.dart';
 import '../screens/product_variants_page.dart';
+import '../screens/all_products_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,7 +22,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey =
+  GlobalKey<ScaffoldState>();
 
   late AnimationController fadeCtrl;
   late Animation<double> fadeAnim;
@@ -120,55 +122,13 @@ class _HomePageState extends State<HomePage>
         opacity: fadeAnim,
         child: Column(
           children: [
-            /// ---------------- WHITE HEADER ----------------
-            Container(
-              padding: const EdgeInsets.only(
-                  top: 45, left: 16, right: 16, bottom: 16),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 4,
-                      offset: Offset(0, 2))
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  GestureDetector(
-                    onTap: () => _scaffoldKey.currentState!.openDrawer(),
-                    child: const Icon(Icons.menu),
-                  ),
-                  const Text(
-                    "Home",
-                    style:
-                    TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.shopping_cart_outlined),
-                        onPressed: () =>
-                            Navigator.pushNamed(context, "/cart"),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.person_outline),
-                        onPressed: () async {
-                          final prefs =
-                          await SharedPreferences.getInstance();
-                          final userId = prefs.getInt("user_id");
-                          Navigator.pushNamed(
-                              context, userId != null ? "/profile" : "/login");
-                        },
-                      ),
-                    ],
-                  )
-                ],
-              ),
+            BhejduAppBar(
+              title: "Home",
+              onMenuTap: () {
+                _scaffoldKey.currentState?.openDrawer();
+              },
             ),
 
-            /// ---------------- CONTENT ----------------
             Expanded(
               child: loading
                   ? const Center(child: CircularProgressIndicator())
@@ -183,45 +143,43 @@ class _HomePageState extends State<HomePage>
 
                     const SizedBox(height: 24),
 
-                    /// OFFERS
                     const Text(
                       "Special Offers",
                       style: TextStyle(
-                          fontSize: 22, fontWeight: FontWeight.bold),
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 14),
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        OfferCard(
-                          title: "Flat 20% OFF\nFirst Order",
-                          bgColor: BhejduColors.offerOrange,
-                          onTap: () {},
-                        ),
-                        OfferCard(
-                          title: "Free Delivery\nAbove ₹500",
-                          bgColor: BhejduColors.successGreen,
-                          onTap: () {},
-                        ),
-                        OfferCard(
-                          title: "Buy 1 Get 1",
-                          bgColor: BhejduColors.offerBlue,
-                          onTap: () {},
-                        ),
-                      ],
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: const [
+                          OfferCard(
+                            title: "Flat 20% OFF\nFirst Order",
+                            bgColor: BhejduColors.offerOrange,
+                          ),
+                          SizedBox(width: 12),
+                          OfferCard(
+                            title: "Free Delivery\nAbove ₹500",
+                            bgColor: BhejduColors.successGreen,
+                          ),
+                          SizedBox(width: 12),
+                          OfferCard(
+                            title: "Buy 1 Get 1",
+                            bgColor: BhejduColors.offerBlue,
+                          ),
+                        ],
+                      ),
                     ),
 
                     const SizedBox(height: 30),
 
-                    /// CATEGORIES
                     const Text(
                       "Categories",
                       style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: BhejduColors.textDark,
-                      ),
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 14),
 
@@ -241,8 +199,7 @@ class _HomePageState extends State<HomePage>
                                   context,
                                   "/product-list",
                                   arguments: {
-                                    "id": int.parse(
-                                        cat["id"].toString()),
+                                    "id": int.parse(cat["id"].toString()),
                                     "name": cat["name"],
                                   },
                                 );
@@ -255,22 +212,32 @@ class _HomePageState extends State<HomePage>
 
                     const SizedBox(height: 30),
 
-                    /// FEATURED PRODUCTS
                     Row(
                       mainAxisAlignment:
                       MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
+                      children: [
+                        const Text(
                           "Featured Products",
                           style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w700),
                         ),
-                        Text(
-                          "View All",
-                          style: TextStyle(
-                              color: BhejduColors.primaryBlue,
-                              fontWeight: FontWeight.w600),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                const AllProductsPage(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            "View All",
+                            style: TextStyle(
+                                color: BhejduColors.primaryBlue,
+                                fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ],
                     ),
@@ -291,8 +258,6 @@ class _HomePageState extends State<HomePage>
                       ),
                       itemBuilder: (context, i) {
                         final p = featured[i];
-
-                        /// ✅ IMAGE URL FIX (IMPORTANT)
                         final img = p["image"].toString();
 
                         return GestureDetector(
@@ -327,16 +292,12 @@ class _HomePageState extends State<HomePage>
                                 ClipRRect(
                                   borderRadius:
                                   const BorderRadius.vertical(
-                                      top:
-                                      Radius.circular(16)),
+                                      top: Radius.circular(16)),
                                   child: Image.network(
                                     img,
                                     height: 120,
                                     width: double.infinity,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
-                                    const Icon(
-                                        Icons.broken_image),
                                   ),
                                 ),
                                 Padding(
@@ -373,21 +334,6 @@ class _HomePageState extends State<HomePage>
                         );
                       },
                     ),
-
-                    const SizedBox(height: 30),
-
-                    /// REVIEWS
-                    const Text(
-                      "What Customers Say",
-                      style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 14),
-
-                    _simpleReview("Priya", "Fresh & fast delivery 👍"),
-                    _simpleReview("Rahul", "Best grocery app so far!"),
-                    _simpleReview("Neha", "Quality products, loved it"),
                   ],
                 ),
               ),
@@ -396,19 +342,21 @@ class _HomePageState extends State<HomePage>
         ),
       ),
 
-      /// ---------------- BOTTOM NAV ----------------
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        selectedItemColor: BhejduColors.primaryBlue,
-        unselectedItemColor: Colors.grey,
         onTap: (i) {
           setState(() => _currentIndex = i);
-          if (i == 1) Navigator.pushNamed(context, "/categories");
-          if (i == 2) Navigator.pushNamed(context, "/orders");
-          if (i == 3) Navigator.pushNamed(context, "/profile");
+          if (i == 1) {
+            Navigator.pushNamed(context, "/categories");
+          } else if (i == 2) {
+            Navigator.pushNamed(context, "/orders");
+          } else if (i == 3) {
+            Navigator.pushNamed(context, "/profile");
+          }
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
               icon: Icon(Icons.grid_view), label: "Categories"),
           BottomNavigationBarItem(
@@ -419,36 +367,16 @@ class _HomePageState extends State<HomePage>
       ),
     );
   }
-
-  Widget _simpleReview(String name, String text) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4)
-        ],
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.person),
-          const SizedBox(width: 12),
-          Expanded(child: Text("$name: $text")),
-        ],
-      ),
-    );
-  }
 }
 
-/// ---------------- SERVER BANNER SLIDER ----------------
+/// SERVER BANNER SLIDER
 class _ServerBannerSlider extends StatefulWidget {
   final List<String> banners;
   const _ServerBannerSlider({required this.banners});
 
   @override
-  State<_ServerBannerSlider> createState() => _ServerBannerSliderState();
+  State<_ServerBannerSlider> createState() =>
+      _ServerBannerSliderState();
 }
 
 class _ServerBannerSliderState extends State<_ServerBannerSlider> {
@@ -460,13 +388,16 @@ class _ServerBannerSliderState extends State<_ServerBannerSlider> {
   void initState() {
     super.initState();
     controller = PageController();
-    timer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!controller.hasClients) return;
-      index = (index + 1) % widget.banners.length;
-      controller.animateToPage(index,
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut);
-    });
+    timer =
+        Timer.periodic(const Duration(seconds: 4), (_) {
+          if (!controller.hasClients) return;
+          index = (index + 1) % widget.banners.length;
+          controller.animateToPage(
+            index,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+          );
+        });
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+
 import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
 import '../utils/preference_manager.dart';
@@ -9,10 +10,12 @@ class AddressManagementPage extends StatefulWidget {
   const AddressManagementPage({super.key});
 
   @override
-  State<AddressManagementPage> createState() => _AddressManagementPageState();
+  State<AddressManagementPage> createState() =>
+      _AddressManagementPageState();
 }
 
-class _AddressManagementPageState extends State<AddressManagementPage> {
+class _AddressManagementPageState
+    extends State<AddressManagementPage> {
   List addresses = [];
   bool isLoading = true;
 
@@ -25,7 +28,6 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
     fetchAddresses();
   }
 
-  /// FETCH USER ADDRESSES FROM BACKEND
   Future fetchAddresses() async {
     final userId = await PreferenceManager.getUserId();
 
@@ -37,18 +39,13 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
 
     final data = jsonDecode(response.body);
 
-    if (data["status"] == "success") {
-      setState(() {
-        addresses = data["addresses"];
-        isLoading = false;
-      });
-    } else {
-      setState(() => isLoading = false);
-    }
+    setState(() {
+      addresses = data["addresses"] ?? [];
+      isLoading = false;
+    });
   }
 
-  /// ADD NEW ADDRESS
-  Future addAddress(String type, String details) async {
+  Future addAddress(String type, String address) async {
     final userId = await PreferenceManager.getUserId();
 
     await http.post(
@@ -57,29 +54,27 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
       body: jsonEncode({
         "user_id": userId,
         "title": type,
-        "address": details,
-      }),
-    );
-
-    fetchAddresses(); // refresh list
-  }
-
-  /// UPDATE EXISTING ADDRESS
-  Future updateAddress(int id, String type, String details) async {
-    await http.post(
-      Uri.parse("$baseUrl/update_address.php"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "id": id,
-        "title": type,
-        "address": details,
+        "address": address,
       }),
     );
 
     fetchAddresses();
   }
 
-  /// DELETE ADDRESS
+  Future updateAddress(int id, String type, String address) async {
+    await http.post(
+      Uri.parse("$baseUrl/update_address.php"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "id": id,
+        "title": type,
+        "address": address,
+      }),
+    );
+
+    fetchAddresses();
+  }
+
   Future deleteAddress(int id) async {
     final userId = await PreferenceManager.getUserId();
 
@@ -99,124 +94,122 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: BhejduColors.bgLight,
-
       body: Column(
         children: [
-          /// TOP APP BAR
           BhejduAppBar(
             title: "My Addresses",
             showBack: true,
             onBackTap: () => Navigator.pop(context),
           ),
 
-          const SizedBox(height: 10),
-
-          /// ADD NEW ADDRESS BUTTON
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(16),
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: BhejduColors.primaryBlue,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding:
+                const EdgeInsets.symmetric(vertical: 14),
               ),
-              icon: const Icon(Icons.add_location_alt, color: Colors.white),
+              icon: const Icon(Icons.add_location_alt,
+                  color: Colors.white),
               label: const Text(
                 "Add New Address",
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                  fontSize: 16,
-                ),
+                style:
+                TextStyle(color: Colors.white, fontSize: 16),
               ),
-              onPressed: () {
-                _showNewAddressBottomSheet();
-              },
+              onPressed: () => _addressBottomSheet(),
             ),
           ),
 
-          const SizedBox(height: 20),
-
-          /// ADDRESS LIST
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                child: CircularProgressIndicator())
                 : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16),
               itemCount: addresses.length,
               itemBuilder: (context, index) {
                 final item = addresses[index];
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: BhejduColors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 6,
-                        offset: Offset(2, 3),
-                      ),
-                    ],
-                  ),
-
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      /// TITLE + BUTTONS (EDIT + DELETE)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            item["title"],
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 18,
-                              color: BhejduColors.textDark,
-                            ),
-                          ),
-
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: BhejduColors.primaryBlue,
-                                ),
-                                onPressed: () {
-                                  _editAddress(item);
-                                },
-                              ),
-
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () {
-                                  deleteAddress(item["id"]);
-                                },
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 6),
-
-                      /// ADDRESS DETAILS
-                      Text(
-                        item["address"],
-                        style: const TextStyle(
-                          color: BhejduColors.textGrey,
-                          fontSize: 14,
+                /// ✅ TAP TO SELECT ADDRESS
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context, item);
+                  },
+                  child: Container(
+                    margin:
+                    const EdgeInsets.only(bottom: 14),
+                    padding:
+                    const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius:
+                      BorderRadius.circular(16),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 6,
+                          offset: Offset(2, 3),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment:
+                          MainAxisAlignment
+                              .spaceBetween,
+                          children: [
+                            Chip(
+                              label: Text(
+                                item["title"],
+                                style: const TextStyle(
+                                    color: Colors.white),
+                              ),
+                              backgroundColor:
+                              BhejduColors.primaryBlue,
+                            ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                      Icons.edit,
+                                      color:
+                                      BhejduColors
+                                          .primaryBlue),
+                                  onPressed: () =>
+                                      _addressBottomSheet(
+                                          item: item),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.red),
+                                  onPressed: () =>
+                                      deleteAddress(
+                                          item["id"]),
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          item["address"],
+                          style: const TextStyle(
+                            color:
+                            BhejduColors.textGrey,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -227,16 +220,25 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
     );
   }
 
-  // ------------------------- ADD ADDRESS BOTTOMSHEET -------------------------
-  void _showNewAddressBottomSheet() {
-    TextEditingController typeCtrl = TextEditingController();
-    TextEditingController detailsCtrl = TextEditingController();
+  // ---------------- ADDRESS ADD / EDIT ----------------
+
+  void _addressBottomSheet({dynamic item}) {
+    String selectedType = item?["title"] ?? "Home";
+
+    final houseCtrl = TextEditingController();
+    final buildingCtrl = TextEditingController();
+    final streetCtrl = TextEditingController();
+    final landmarkCtrl = TextEditingController();
+    final cityCtrl = TextEditingController();
+    final pincodeCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        borderRadius:
+        BorderRadius.vertical(top: Radius.circular(22)),
       ),
       builder: (_) {
         return Padding(
@@ -244,158 +246,68 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
             left: 16,
             right: 16,
             top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            bottom:
+            MediaQuery.of(context).viewInsets.bottom + 20,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "Add New Address",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                _input("Flat / House No.", houseCtrl),
+                _input("Building / Apartment", buildingCtrl),
+                _input("Street / Locality", streetCtrl),
+                _input("Landmark", landmarkCtrl),
+                _input("City", cityCtrl),
+                _input("Pincode", pincodeCtrl,
+                    keyboard: TextInputType.number),
+                _input("Phone", phoneCtrl,
+                    keyboard: TextInputType.phone),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    final fullAddress = """
+${houseCtrl.text}, ${buildingCtrl.text}
+${streetCtrl.text}
+${landmarkCtrl.text}
+${cityCtrl.text} - ${pincodeCtrl.text}
+Phone: ${phoneCtrl.text}
+""";
+
+                    if (item == null) {
+                      addAddress(selectedType,
+                          fullAddress.trim());
+                    } else {
+                      updateAddress(item["id"],
+                          selectedType, fullAddress.trim());
+                    }
+
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Save Address"),
                 ),
-              ),
-
-              const SizedBox(height: 18),
-
-              TextField(
-                controller: typeCtrl,
-                decoration: InputDecoration(
-                  labelText: "Address Type (Home / Office)",
-                  filled: true,
-                  fillColor: BhejduColors.bgLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              TextField(
-                controller: detailsCtrl,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: "Full Address",
-                  filled: true,
-                  fillColor: BhejduColors.bgLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: BhejduColors.primaryBlue,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () {
-                  addAddress(typeCtrl.text, detailsCtrl.text);
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  "Save Address",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              )
-            ],
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  // ------------------------- EDIT ADDRESS BOTTOMSHEET -------------------------
-  void _editAddress(dynamic item) {
-    TextEditingController typeCtrl =
-    TextEditingController(text: item["title"]);
-    TextEditingController detailsCtrl =
-    TextEditingController(text: item["address"]);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+  Widget _input(String label, TextEditingController controller,
+      {TextInputType keyboard = TextInputType.text}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboard,
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: BhejduColors.bgLight,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       ),
-      builder: (_) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "Edit Address",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              TextField(
-                controller: typeCtrl,
-                decoration: InputDecoration(
-                  labelText: "Address Type",
-                  filled: true,
-                  fillColor: BhejduColors.bgLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              TextField(
-                controller: detailsCtrl,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: "Full Address",
-                  filled: true,
-                  fillColor: BhejduColors.bgLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: BhejduColors.primaryBlue,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () {
-                  updateAddress(item["id"], typeCtrl.text, detailsCtrl.text);
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  "Update Address",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              )
-            ],
-          ),
-        );
-      },
     );
   }
 }

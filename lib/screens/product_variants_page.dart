@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
+import '../utils/cart_manager.dart';
 
 class ProductVariantsPage extends StatefulWidget {
   final int productId;
@@ -16,11 +17,13 @@ class ProductVariantsPage extends StatefulWidget {
   });
 
   @override
-  State<ProductVariantsPage> createState() => _ProductVariantsPageState();
+  State<ProductVariantsPage> createState() =>
+      _ProductVariantsPageState();
 }
 
-class _ProductVariantsPageState extends State<ProductVariantsPage> {
-  List variants = [];
+class _ProductVariantsPageState
+    extends State<ProductVariantsPage> {
+  List<Map<String, dynamic>> variants = [];
   bool loading = true;
 
   @override
@@ -29,35 +32,31 @@ class _ProductVariantsPageState extends State<ProductVariantsPage> {
     fetchVariants();
   }
 
-  Future fetchVariants() async {
-    final url =
+  /// FETCH VARIANTS FROM API
+  Future<void> fetchVariants() async {
+    const url =
         "https://darkslategrey-chicken-274271.hostingersite.com/api/get_variants.php";
 
     try {
-      print("📤 SENDING PRODUCT ID: ${widget.productId}");
-
       final response = await http.post(
         Uri.parse(url),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "product_id": int.parse(widget.productId.toString()), // ✅ FIXED
+          "product_id": widget.productId,
         }),
       );
-
-      print("📥 VARIANTS API RESPONSE: ${response.body}");
 
       final data = jsonDecode(response.body);
 
       if (data["status"] == "success") {
-        setState(() {
-          variants = data["variants"];
-          loading = false;
-        });
-      } else {
-        setState(() => loading = false);
+        variants =
+        List<Map<String, dynamic>>.from(data["variants"]);
       }
     } catch (e) {
-      print("❌ ERROR in get_variants API: $e");
+      debugPrint("Variant fetch error: $e");
+    }
+
+    if (mounted) {
       setState(() => loading = false);
     }
   }
@@ -77,7 +76,6 @@ class _ProductVariantsPageState extends State<ProductVariantsPage> {
           Expanded(
             child: loading
                 ? const Center(child: CircularProgressIndicator())
-
                 : variants.isEmpty
                 ? const Center(
               child: Text(
@@ -88,7 +86,6 @@ class _ProductVariantsPageState extends State<ProductVariantsPage> {
                 ),
               ),
             )
-
                 : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: variants.length,
@@ -101,49 +98,125 @@ class _ProductVariantsPageState extends State<ProductVariantsPage> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: BhejduColors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
+                    borderRadius:
+                    BorderRadius.circular(16),
+                    boxShadow: const [
                       BoxShadow(
-                        color: Colors.black12.withOpacity(0.06),
+                        color: Colors.black12,
                         blurRadius: 6,
-                        offset: const Offset(1, 2),
+                        offset: Offset(1, 2),
                       ),
                     ],
                   ),
                   child: Row(
-                    mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item["size"],
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            "₹${item["price"]}",
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: BhejduColors.primaryBlue,
-                            ),
-                          ),
-                        ],
+                      /// IMAGE
+                      Container(
+                        height: 60,
+                        width: 60,
+                        decoration: BoxDecoration(
+                          borderRadius:
+                          BorderRadius.circular(12),
+                          color: BhejduColors
+                              .primaryBlueLight,
+                          image: item["image"] != null &&
+                              item["image"]
+                                  .toString()
+                                  .isNotEmpty
+                              ? DecorationImage(
+                            image: NetworkImage(
+                                item["image"]
+                                    .toString()),
+                            fit: BoxFit.cover,
+                          )
+                              : null,
+                        ),
+                        child: item["image"] == null ||
+                            item["image"]
+                                .toString()
+                                .isEmpty
+                            ? const Icon(
+                          Icons.shopping_basket,
+                          color: BhejduColors
+                              .primaryBlue,
+                        )
+                            : null,
                       ),
+
+                      const SizedBox(width: 14),
+
+                      /// DETAILS
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item["size"].toString(),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight:
+                                FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "₹${item["price"]}",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight:
+                                FontWeight.w700,
+                                color: BhejduColors
+                                    .primaryBlue,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      /// ADD TO CART
                       ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
+                        onPressed: () async {
+                          await CartManager.addToCart({
+                            "product_id":
+                            widget.productId,
+                            "variant_id": int.parse(
+                                item["id"].toString()),
+                            "name":
+                            "${widget.productName} (${item["size"]})",
+                            "price": int.parse(
+                              double.parse(
+                                  item["price"]
+                                      .toString())
+                                  .round()
+                                  .toString(),
+                            ), // ✅ SAFE FIX
+                            "qty": 1,
+                            "image":
+                            item["image"]?.toString() ??
+                                "",
+                          });
+
+                          if (context.mounted) {
+                            Navigator.pushNamed(
+                                context, "/cart");
+                          }
+                        },
+                        style:
+                        ElevatedButton.styleFrom(
                           backgroundColor:
                           BhejduColors.primaryBlue,
+                          shape:
+                          RoundedRectangleBorder(
+                            borderRadius:
+                            BorderRadius.circular(
+                                10),
+                          ),
                         ),
                         child: const Text(
                           "ADD",
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(
+                              color: Colors.white),
                         ),
                       ),
                     ],

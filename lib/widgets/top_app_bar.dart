@@ -32,9 +32,17 @@ class BhejduAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(top: 45, left: 16, right: 16, bottom: 16),
+      padding:
+      const EdgeInsets.only(top: 45, left: 16, right: 16, bottom: 16),
       decoration: const BoxDecoration(
-        color: BhejduColors.primaryBlue,
+        color: Colors.white, // ✅ WHITE BACKGROUND
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(22),
           bottomRight: Radius.circular(22),
@@ -43,7 +51,7 @@ class BhejduAppBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          /// LEFT
+          /// LEFT (MENU / BACK)
           GestureDetector(
             onTap: () {
               if (showBack) {
@@ -51,39 +59,56 @@ class BhejduAppBar extends StatelessWidget {
                     ? onBackTap!()
                     : Navigator.pop(context);
               } else {
-                onMenuTap != null
-                    ? onMenuTap!()
-                    : Scaffold.of(context).openDrawer();
+                onMenuTap?.call();
               }
             },
             child: Icon(
               showBack ? Icons.arrow_back : Icons.menu,
-              color: Colors.white,
+              color: BhejduColors.textDark, // ✅ DARK ICON
               size: 26,
             ),
           ),
 
-          /// CENTER
+          /// CENTER TITLE
           Text(
             title,
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: BhejduColors.textDark, // ✅ DARK TEXT
             ),
           ),
 
-          /// RIGHT
-          showAccountIcon
-              ? GestureDetector(
-            onTap: () => _handleAccountTap(context),
-            child: const Icon(
-              Icons.person,
-              color: Colors.white,
-              size: 26,
-            ),
-          )
-              : const SizedBox(width: 26),
+          /// RIGHT ICONS
+          Row(
+            children: [
+              /// 🛒 CART
+              GestureDetector(
+                onTap: () {
+                  Navigator.pushNamed(context, "/cart");
+                },
+                child: const Icon(
+                  Icons.shopping_cart,
+                  color: BhejduColors.textDark, // ✅ DARK ICON
+                  size: 26,
+                ),
+              ),
+
+              const SizedBox(width: 14),
+
+              /// 👤 ACCOUNT
+              showAccountIcon
+                  ? GestureDetector(
+                onTap: () => _handleAccountTap(context),
+                child: const Icon(
+                  Icons.person,
+                  color: BhejduColors.textDark, // ✅ DARK ICON
+                  size: 26,
+                ),
+              )
+                  : const SizedBox(width: 26),
+            ],
+          ),
         ],
       ),
     );

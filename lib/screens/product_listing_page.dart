@@ -4,7 +4,8 @@ import 'package:http/http.dart' as http;
 
 import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
-import '../widgets/product_horizontal_card.dart'; // ⭐ CHANGED
+import '../widgets/product_horizontal_card.dart';
+import '../utils/cart_manager.dart';
 import 'product_variants_page.dart';
 
 class ProductListingPage extends StatefulWidget {
@@ -18,10 +19,12 @@ class ProductListingPage extends StatefulWidget {
   });
 
   @override
-  State<ProductListingPage> createState() => _ProductListingPageState();
+  State<ProductListingPage> createState() =>
+      _ProductListingPageState();
 }
 
-class _ProductListingPageState extends State<ProductListingPage> {
+class _ProductListingPageState
+    extends State<ProductListingPage> {
   List products = [];
   bool loading = true;
 
@@ -36,8 +39,6 @@ class _ProductListingPageState extends State<ProductListingPage> {
         "https://darkslategrey-chicken-274271.hostingersite.com/api/get_products.php";
 
     try {
-      print("📤 SENDING CATEGORY ID: ${widget.categoryId}");
-
       final response = await http.post(
         Uri.parse(url),
         headers: {"Content-Type": "application/json"},
@@ -45,8 +46,6 @@ class _ProductListingPageState extends State<ProductListingPage> {
           "category_id": widget.categoryId,
         }),
       );
-
-      print("📥 API RESPONSE: ${response.body}");
 
       final data = jsonDecode(response.body);
 
@@ -59,7 +58,6 @@ class _ProductListingPageState extends State<ProductListingPage> {
         setState(() => loading = false);
       }
     } catch (e) {
-      print("❌ Product API Error: $e");
       setState(() => loading = false);
     }
   }
@@ -70,7 +68,6 @@ class _ProductListingPageState extends State<ProductListingPage> {
       backgroundColor: BhejduColors.bgLight,
       body: Column(
         children: [
-          /// 🔵 APP BAR
           BhejduAppBar(
             title: widget.categoryName,
             showBack: true,
@@ -79,8 +76,8 @@ class _ProductListingPageState extends State<ProductListingPage> {
 
           Expanded(
             child: loading
-                ? const Center(child: CircularProgressIndicator())
-
+                ? const Center(
+                child: CircularProgressIndicator())
                 : products.isEmpty
                 ? const Center(
               child: Text(
@@ -91,37 +88,57 @@ class _ProductListingPageState extends State<ProductListingPage> {
                 ),
               ),
             )
-
                 : ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding:
+              const EdgeInsets.all(16),
               itemCount: products.length,
               itemBuilder: (context, index) {
                 final item = products[index];
 
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-
-                  /// ⭐ IMAGE BASED PRODUCT CARD
+                  padding:
+                  const EdgeInsets.only(
+                      bottom: 14),
                   child: ProductHorizontalCard(
                     title: item["name"],
                     price: "₹${item["price"]}",
-                    image: item["image"], // ✅ FULL IMAGE URL
+                    image: item["image"],
 
+                    /// OPEN VARIANTS
                     onTapProduct: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ProductVariantsPage(
-                            productId:
-                            int.parse(item["id"].toString()),
-                            productName: item["name"],
-                          ),
+                          builder: (_) =>
+                              ProductVariantsPage(
+                                productId: int.parse(
+                                    item["id"]
+                                        .toString()),
+                                productName:
+                                item["name"],
+                              ),
                         ),
                       );
                     },
 
-                    onAdd: () {
-                      // 🛒 Add to cart (future)
+                    /// ADD TO CART (FIXED)
+                    onAdd: () async {
+                      await CartManager.addToCart({
+                        "product_id": int.parse(
+                            item["id"]
+                                .toString()),
+                        "variant_id": 0,
+                        "name": item["name"],
+                        "price": int.parse(
+                            item["price"]
+                                .toString()),
+                        "image": item["image"],
+                      });
+
+                      if (context.mounted) {
+                        Navigator.pushNamed(
+                            context, "/cart");
+                      }
                     },
                   ),
                 );
