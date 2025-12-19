@@ -32,10 +32,14 @@ class BhejduAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-      const EdgeInsets.only(top: 45, left: 16, right: 16, bottom: 16),
+      padding: const EdgeInsets.only(
+        top: 50, // 🔹 extra space for status bar + logo
+        left: 16,
+        right: 16,
+        bottom: 16,
+      ),
       decoration: const BoxDecoration(
-        color: Colors.white, // ✅ WHITE BACKGROUND
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
@@ -48,65 +52,81 @@ class BhejduAppBar extends StatelessWidget {
           bottomRight: Radius.circular(22),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          /// LEFT (MENU / BACK)
-          GestureDetector(
-            onTap: () {
-              if (showBack) {
-                onBackTap != null
-                    ? onBackTap!()
-                    : Navigator.pop(context);
-              } else {
-                onMenuTap?.call();
-              }
-            },
-            child: Icon(
-              showBack ? Icons.arrow_back : Icons.menu,
-              color: BhejduColors.textDark, // ✅ DARK ICON
-              size: 26,
+          /// 🔵 ROW 1 — LOGO
+          Center(
+            child: Image.asset(
+              "assets/images/logo.png",
+              height: 38, // adjust if needed
             ),
           ),
 
-          /// CENTER TITLE
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: BhejduColors.textDark, // ✅ DARK TEXT
-            ),
-          ),
+          const SizedBox(height: 12),
 
-          /// RIGHT ICONS
+          /// 🔹 ROW 2 — HEADER BUTTONS
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              /// 🛒 CART
+              /// LEFT (MENU / BACK)
               GestureDetector(
                 onTap: () {
-                  Navigator.pushNamed(context, "/cart");
+                  if (showBack) {
+                    onBackTap != null
+                        ? onBackTap!()
+                        : Navigator.pop(context);
+                  } else {
+                    onMenuTap?.call();
+                  }
                 },
-                child: const Icon(
-                  Icons.shopping_cart,
-                  color: BhejduColors.textDark, // ✅ DARK ICON
+                child: Icon(
+                  showBack ? Icons.arrow_back : Icons.menu,
+                  color: BhejduColors.textDark,
                   size: 26,
                 ),
               ),
 
-              const SizedBox(width: 14),
-
-              /// 👤 ACCOUNT
-              showAccountIcon
-                  ? GestureDetector(
-                onTap: () => _handleAccountTap(context),
-                child: const Icon(
-                  Icons.person,
-                  color: BhejduColors.textDark, // ✅ DARK ICON
-                  size: 26,
+              /// CENTER TITLE
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: BhejduColors.textDark,
                 ),
-              )
-                  : const SizedBox(width: 26),
+              ),
+
+              /// RIGHT ICONS
+              Row(
+                children: [
+                  /// 🛒 CART
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, "/cart");
+                    },
+                    child: const Icon(
+                      Icons.shopping_cart,
+                      color: BhejduColors.textDark,
+                      size: 26,
+                    ),
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  /// 👤 ACCOUNT
+                  showAccountIcon
+                      ? GestureDetector(
+                    onTap: () => _handleAccountTap(context),
+                    child: const Icon(
+                      Icons.person,
+                      color: BhejduColors.textDark,
+                      size: 26,
+                    ),
+                  )
+                      : const SizedBox(width: 26),
+                ],
+              ),
             ],
           ),
         ],

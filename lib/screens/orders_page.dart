@@ -1,15 +1,70 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
+import '../screens/order_tracking_page.dart'; // ⭐ ADDED
 
-class OrdersPage extends StatelessWidget {
+class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
+
+  @override
+  State<OrdersPage> createState() => _OrdersPageState();
+}
+
+class _OrdersPageState extends State<OrdersPage> {
+  List orders = [];
+  bool loading = true;
+
+  final String baseUrl =
+      "https://darkslategrey-chicken-274271.hostingersite.com/api";
+
+  @override
+  void initState() {
+    super.initState();
+    fetchOrders();
+  }
+
+  /// 🔹 FETCH USER ORDERS
+  Future fetchOrders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt("user_id");
+
+    final response = await http.post(
+      Uri.parse("$baseUrl/get_orders.php"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"user_id": userId}),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (data["status"] == "success") {
+      setState(() {
+        orders = data["orders"];
+        loading = false;
+      });
+    }
+  }
+
+  Color statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case "delivered":
+        return BhejduColors.successGreen;
+      case "shipped":
+        return BhejduColors.offerBlue;
+      case "processing":
+        return BhejduColors.offerOrange;
+      default:
+        return BhejduColors.textGrey;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: BhejduColors.bgLight,
-
       body: Column(
         children: [
           /// 🔵 Custom Blue App Bar
@@ -21,45 +76,26 @@ class OrdersPage extends StatelessWidget {
 
           /// PAGE CONTENT
           Expanded(
-            child: ListView(
+            child: loading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView(
               padding: const EdgeInsets.all(16),
-              children: [
-                _orderTile(
-                  orderId: "#ORD1023",
-                  date: "3 Dec 2025",
-                  status: "Delivered",
-                  color: BhejduColors.successGreen,
-                  onTrack: () =>
-                      Navigator.pushNamed(context, "/orderTracking"),
-                ),
-
-                _orderTile(
-                  orderId: "#ORD1022",
-                  date: "1 Dec 2025",
-                  status: "Out for Delivery",
-                  color: BhejduColors.offerBlue,
-                  onTrack: () =>
-                      Navigator.pushNamed(context, "/orderTracking"),
-                ),
-
-                _orderTile(
-                  orderId: "#ORD1021",
-                  date: "29 Nov 2025",
-                  status: "Packed",
-                  color: BhejduColors.offerOrange,
-                  onTrack: () =>
-                      Navigator.pushNamed(context, "/orderTracking"),
-                ),
-
-                _orderTile(
-                  orderId: "#ORD1019",
-                  date: "27 Nov 2025",
-                  status: "Pending",
-                  color: BhejduColors.textGrey,
-                  onTrack: () =>
-                      Navigator.pushNamed(context, "/orderTracking"),
-                ),
-              ],
+              children: orders.map((o) {
+                return _orderTile(
+                  orderId: o["order_no"],
+                  date: o["date"],
+                  status: o["status"],
+                  color: statusColor(o["status"]),
+                  onTrack: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => OrderTrackingPage(
+                        orderStatus: o["status"], // ⭐ PASS STATUS
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           ),
         ],

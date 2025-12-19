@@ -9,6 +9,9 @@ class ProductHorizontalCard extends StatelessWidget {
   final VoidCallback onTapProduct;
   final VoidCallback onAdd;
 
+  /// 🔹 NEW (OPTIONAL)
+  final String addText;
+
   const ProductHorizontalCard({
     super.key,
     required this.title,
@@ -16,6 +19,7 @@ class ProductHorizontalCard extends StatelessWidget {
     required this.image,
     required this.onTapProduct,
     required this.onAdd,
+    this.addText = "ADD", // ✅ DEFAULT
   });
 
   @override
@@ -35,7 +39,7 @@ class ProductHorizontalCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          /// 🔥 PRODUCT TAP AREA (NO GestureDetector)
+          /// 🔥 PRODUCT TAP AREA
           Expanded(
             child: InkWell(
               onTap: onTapProduct,
@@ -96,20 +100,20 @@ class ProductHorizontalCard extends StatelessWidget {
             ),
           ),
 
-          /// ✅ ADD BUTTON (ISOLATED — ALWAYS FIRES)
+          /// ✅ BUTTON (TEXT IS NOW DYNAMIC)
           ElevatedButton(
             onPressed: onAdd,
             style: ElevatedButton.styleFrom(
               backgroundColor: BhejduColors.primaryBlue,
-              padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
-              "ADD",
-              style: TextStyle(color: Colors.white),
+            child: Text(
+              addText, // 🔹 UPDATED
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ],

@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
 import '../widgets/product_horizontal_card.dart';
-import '../utils/cart_manager.dart';
 import 'product_variants_page.dart';
 
 class ProductListingPage extends StatefulWidget {
@@ -76,8 +75,7 @@ class _ProductListingPageState
 
           Expanded(
             child: loading
-                ? const Center(
-                child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator())
                 : products.isEmpty
                 ? const Center(
               child: Text(
@@ -89,16 +87,14 @@ class _ProductListingPageState
               ),
             )
                 : ListView.builder(
-              padding:
-              const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               itemCount: products.length,
               itemBuilder: (context, index) {
                 final item = products[index];
 
                 return Padding(
                   padding:
-                  const EdgeInsets.only(
-                      bottom: 14),
+                  const EdgeInsets.only(bottom: 14),
                   child: ProductHorizontalCard(
                     title: item["name"],
                     price: "₹${item["price"]}",
@@ -112,33 +108,26 @@ class _ProductListingPageState
                           builder: (_) =>
                               ProductVariantsPage(
                                 productId: int.parse(
-                                    item["id"]
-                                        .toString()),
-                                productName:
-                                item["name"],
+                                    item["id"].toString()),
+                                productName: item["name"],
                               ),
                         ),
                       );
                     },
 
-                    /// ADD TO CART (FIXED)
-                    onAdd: () async {
-                      await CartManager.addToCart({
-                        "product_id": int.parse(
-                            item["id"]
-                                .toString()),
-                        "variant_id": 0,
-                        "name": item["name"],
-                        "price": int.parse(
-                            item["price"]
-                                .toString()),
-                        "image": item["image"],
-                      });
-
-                      if (context.mounted) {
-                        Navigator.pushNamed(
-                            context, "/cart");
-                      }
+                    /// VIEW (UPDATED)
+                    onAdd: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ProductVariantsPage(
+                                productId: int.parse(
+                                    item["id"].toString()),
+                                productName: item["name"],
+                              ),
+                        ),
+                      );
                     },
                   ),
                 );

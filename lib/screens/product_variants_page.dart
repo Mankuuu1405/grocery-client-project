@@ -26,6 +26,8 @@ class _ProductVariantsPageState
   List<Map<String, dynamic>> variants = [];
   bool loading = true;
 
+  String productImage = "";
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +53,10 @@ class _ProductVariantsPageState
       if (data["status"] == "success") {
         variants =
         List<Map<String, dynamic>>.from(data["variants"]);
+
+        if (variants.isNotEmpty) {
+          productImage = variants[0]["image"]?.toString() ?? "";
+        }
       }
     } catch (e) {
       debugPrint("Variant fetch error: $e");
@@ -86,143 +92,214 @@ class _ProductVariantsPageState
                 ),
               ),
             )
-                : ListView.separated(
+                : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              itemCount: variants.length,
-              separatorBuilder: (_, __) =>
-              const SizedBox(height: 14),
-              itemBuilder: (context, index) {
-                final item = variants[index];
+              child: Column(
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+                children: [
 
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: BhejduColors.white,
+                  /// 🔹 BIG PRODUCT IMAGE
+                  ClipRRect(
                     borderRadius:
                     BorderRadius.circular(16),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 6,
-                        offset: Offset(1, 2),
-                      ),
-                    ],
+                    child: Image.network(
+                      productImage,
+                      height: 220,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      /// IMAGE
-                      Container(
-                        height: 60,
-                        width: 60,
+
+                  const SizedBox(height: 16),
+
+                  /// 🔹 PRODUCT NAME
+                  Text(
+                    widget.productName,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  /// 🔹 VARIANT COUNT
+                  Text(
+                    "Available Variants: ${variants.length}",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color:
+                      BhejduColors.primaryBlue,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// 🔽 VARIANTS LIST
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics:
+                    const NeverScrollableScrollPhysics(),
+                    itemCount: variants.length,
+                    separatorBuilder: (_, __) =>
+                    const SizedBox(height: 14),
+                    itemBuilder: (context, index) {
+                      final item = variants[index];
+
+                      return Container(
+                        padding:
+                        const EdgeInsets.all(16),
                         decoration: BoxDecoration(
+                          color: BhejduColors.white,
                           borderRadius:
-                          BorderRadius.circular(12),
-                          color: BhejduColors
-                              .primaryBlueLight,
-                          image: item["image"] != null &&
-                              item["image"]
-                                  .toString()
-                                  .isNotEmpty
-                              ? DecorationImage(
-                            image: NetworkImage(
-                                item["image"]
-                                    .toString()),
-                            fit: BoxFit.cover,
-                          )
-                              : null,
-                        ),
-                        child: item["image"] == null ||
-                            item["image"]
-                                .toString()
-                                .isEmpty
-                            ? const Icon(
-                          Icons.shopping_basket,
-                          color: BhejduColors
-                              .primaryBlue,
-                        )
-                            : null,
-                      ),
-
-                      const SizedBox(width: 14),
-
-                      /// DETAILS
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item["size"].toString(),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight:
-                                FontWeight.w600,
-                              ),
+                          BorderRadius.circular(
+                              16),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 6,
+                              offset: Offset(1, 2),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "₹${item["price"]}",
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight:
-                                FontWeight.w700,
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            /// IMAGE
+                            Container(
+                              height: 60,
+                              width: 60,
+                              decoration:
+                              BoxDecoration(
+                                borderRadius:
+                                BorderRadius
+                                    .circular(12),
+                                color: BhejduColors
+                                    .primaryBlueLight,
+                                image: item["image"] !=
+                                    null &&
+                                    item["image"]
+                                        .toString()
+                                        .isNotEmpty
+                                    ? DecorationImage(
+                                  image:
+                                  NetworkImage(
+                                    item["image"]
+                                        .toString(),
+                                  ),
+                                  fit: BoxFit.cover,
+                                )
+                                    : null,
+                              ),
+                              child: item["image"] ==
+                                  null ||
+                                  item["image"]
+                                      .toString()
+                                      .isEmpty
+                                  ? const Icon(
+                                Icons
+                                    .shopping_basket,
                                 color: BhejduColors
                                     .primaryBlue,
+                              )
+                                  : null,
+                            ),
+
+                            const SizedBox(width: 14),
+
+                            /// DETAILS
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                CrossAxisAlignment
+                                    .start,
+                                children: [
+                                  Text(
+                                    item["size"]
+                                        .toString(),
+                                    style:
+                                    const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight:
+                                      FontWeight
+                                          .w600,
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                      height: 4),
+                                  Text(
+                                    "₹${item["price"]}",
+                                    style:
+                                    const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight:
+                                      FontWeight
+                                          .w700,
+                                      color:
+                                      BhejduColors
+                                          .primaryBlue,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            /// ADD TO CART
+                            ElevatedButton(
+                              onPressed: () async {
+                                await CartManager
+                                    .addToCart({
+                                  "product_id":
+                                  widget.productId,
+                                  "variant_id": int.parse(
+                                      item["id"]
+                                          .toString()),
+                                  "name":
+                                  "${widget.productName} (${item["size"]})",
+                                  "price": int.parse(
+                                    double.parse(
+                                        item["price"]
+                                            .toString())
+                                        .round()
+                                        .toString(),
+                                  ),
+                                  "qty": 1,
+                                  "image": productImage,
+                                });
+
+                                if (context.mounted) {
+                                  Navigator.pushNamed(
+                                      context,
+                                      "/cart");
+                                }
+                              },
+                              style: ElevatedButton
+                                  .styleFrom(
+                                backgroundColor:
+                                BhejduColors
+                                    .primaryBlue,
+                                shape:
+                                RoundedRectangleBorder(
+                                  borderRadius:
+                                  BorderRadius
+                                      .circular(10),
+                                ),
+                              ),
+                              child: const Text(
+                                "ADD",
+                                style: TextStyle(
+                                    color:
+                                    Colors.white),
                               ),
                             ),
                           ],
                         ),
-                      ),
-
-                      /// ADD TO CART
-                      ElevatedButton(
-                        onPressed: () async {
-                          await CartManager.addToCart({
-                            "product_id":
-                            widget.productId,
-                            "variant_id": int.parse(
-                                item["id"].toString()),
-                            "name":
-                            "${widget.productName} (${item["size"]})",
-                            "price": int.parse(
-                              double.parse(
-                                  item["price"]
-                                      .toString())
-                                  .round()
-                                  .toString(),
-                            ), // ✅ SAFE FIX
-                            "qty": 1,
-                            "image":
-                            item["image"]?.toString() ??
-                                "",
-                          });
-
-                          if (context.mounted) {
-                            Navigator.pushNamed(
-                                context, "/cart");
-                          }
-                        },
-                        style:
-                        ElevatedButton.styleFrom(
-                          backgroundColor:
-                          BhejduColors.primaryBlue,
-                          shape:
-                          RoundedRectangleBorder(
-                            borderRadius:
-                            BorderRadius.circular(
-                                10),
-                          ),
-                        ),
-                        child: const Text(
-                          "ADD",
-                          style: TextStyle(
-                              color: Colors.white),
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                );
-              },
+                ],
+              ),
             ),
           ),
         ],
