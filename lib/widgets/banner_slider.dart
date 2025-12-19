@@ -105,17 +105,27 @@ class _BannerSliderState extends State<BannerSlider> {
                 duration: const Duration(milliseconds: 500),
                 curve: Curves.easeInOut,
                 margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
+                child: ClipRRect(
                   borderRadius: BorderRadius.circular(18),
-                  image: DecorationImage(
-                    image: banners[index].startsWith("http")
-                        ? NetworkImage(banners[index])
-                        : AssetImage(banners[index]) as ImageProvider,
-                    fit: BoxFit.cover,
+                  child: Center(
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9, // 🔥 KEY FIX
+                      child: banners[index].startsWith("http")
+                          ? Image.network(
+                        banners[index],
+                        fit: BoxFit.contain,
+                      )
+                          : Image.asset(
+                        banners[index],
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
                 ),
               );
             },
+
+
           ),
         ),
 
