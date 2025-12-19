@@ -126,10 +126,10 @@ class _AppDrawerState extends State<AppDrawer> {
               icon: Icons.notifications,
               label: "Notifications",
               route: "/notifications"),
-          _drawerItem(context,
-              icon: Icons.account_balance_wallet,
-              label: "Wallet",
-              route: "/wallet"),
+          // _drawerItem(context,
+          //     icon: Icons.account_balance_wallet,
+          //     label: "Wallet",
+          //     route: "/wallet"),
 
           const Divider(height: 36),
 

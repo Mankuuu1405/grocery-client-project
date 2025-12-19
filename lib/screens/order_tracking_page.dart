@@ -3,7 +3,17 @@ import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
 
 class OrderTrackingPage extends StatelessWidget {
-  const OrderTrackingPage({super.key});
+  final String orderStatus; // ⭐ ADDED
+
+  const OrderTrackingPage({
+    super.key,
+    required this.orderStatus, // ⭐ ADDED
+  });
+
+  bool _isActive(String step) {
+    const flow = ["pending", "processing", "shipped", "delivered"];
+    return flow.indexOf(step) <= flow.indexOf(orderStatus);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +51,7 @@ class OrderTrackingPage extends StatelessWidget {
 
                   /// 🔵 Order Status Steps
                   _statusStep(
-                    isActive: true,
+                    isActive: _isActive("pending"),
                     title: "Order Placed",
                     subtitle: "We have received your order",
                   ),
@@ -49,7 +59,7 @@ class OrderTrackingPage extends StatelessWidget {
                   _dividerLine(),
 
                   _statusStep(
-                    isActive: true,
+                    isActive: _isActive("processing"),
                     title: "Packed",
                     subtitle: "Your items are packed securely",
                   ),
@@ -57,7 +67,7 @@ class OrderTrackingPage extends StatelessWidget {
                   _dividerLine(),
 
                   _statusStep(
-                    isActive: false,
+                    isActive: _isActive("shipped"),
                     title: "Out for Delivery",
                     subtitle: "Delivery partner will pick soon",
                   ),
@@ -65,9 +75,11 @@ class OrderTrackingPage extends StatelessWidget {
                   _dividerLine(),
 
                   _statusStep(
-                    isActive: false,
+                    isActive: _isActive("delivered"),
                     title: "Delivered",
-                    subtitle: "Pending…",
+                    subtitle: orderStatus == "delivered"
+                        ? "Order delivered successfully"
+                        : "Pending…",
                   ),
 
                   const Spacer(),
@@ -111,7 +123,6 @@ class OrderTrackingPage extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        /// Left-side circle icon
         Container(
           height: 26,
           width: 26,
@@ -130,7 +141,6 @@ class OrderTrackingPage extends StatelessWidget {
 
         const SizedBox(width: 14),
 
-        /// Text content
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -158,7 +168,6 @@ class OrderTrackingPage extends StatelessWidget {
     );
   }
 
-  /// Divider Line between steps
   Widget _dividerLine() {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 14),

@@ -33,7 +33,7 @@ class _HomePageState extends State<HomePage>
   List categories = [];
   List featured = [];
   List<String> banners = [];
-  List offers = []; // ✅ ADDED
+  List offers = [];
 
   int _currentIndex = 0;
 
@@ -148,20 +148,23 @@ class _HomePageState extends State<HomePage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+
                     banners.isEmpty
                         ? const BannerSlider()
                         : _ServerBannerSlider(banners: banners),
 
                     const SizedBox(height: 24),
 
-                    /// 🔥 DYNAMIC OFFERS (ONLY CHANGE)
                     if (offers.isNotEmpty) ...[
                       const Text(
                         "Special Offers",
                         style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold),
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: BhejduColors.textDark,
+                        ),
                       ),
+
                       const SizedBox(height: 14),
 
                       SingleChildScrollView(
@@ -191,9 +194,12 @@ class _HomePageState extends State<HomePage>
                     const Text(
                       "Categories",
                       style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: BhejduColors.textDark,
+                      ),
                     ),
+
                     const SizedBox(height: 14),
 
                     SingleChildScrollView(
@@ -201,8 +207,10 @@ class _HomePageState extends State<HomePage>
                       child: Row(
                         children: categories.map((cat) {
                           return Padding(
-                            padding:
-                            const EdgeInsets.only(right: 14),
+                            padding: const EdgeInsets.only(
+                              right: 14,
+                              bottom: 12, // ✅ THIS FIXES THE TOUCHING ISSUE
+                            ),
                             child: CategoryCard(
                               title: cat["name"],
                               icon: getIcon(cat["icon"]),
@@ -223,33 +231,36 @@ class _HomePageState extends State<HomePage>
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    /// ✅ UPDATED GAP — THIS IS THE ONLY CHANGE
+                    const SizedBox(height: 40),
 
                     Row(
-                      mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
                           "Featured Products",
                           style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700),
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: BhejduColors.textDark,
+                          ),
                         ),
+
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                const AllProductsPage(),
+                                builder: (_) => const AllProductsPage(),
                               ),
                             );
                           },
                           child: const Text(
                             "View All",
                             style: TextStyle(
-                                color: BhejduColors.primaryBlue,
-                                fontWeight: FontWeight.w600),
+                              color: BhejduColors.primaryBlue,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
@@ -347,6 +358,33 @@ class _HomePageState extends State<HomePage>
                         );
                       },
                     ),
+
+                    /// 🔥 CUSTOMER REVIEWS (ADDED)
+                    const SizedBox(height: 30),
+
+                    const Text(
+                      "Customer Reviews",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: BhejduColors.textDark,
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    _buildReviewCard(
+                        "Priya Sharma",
+                        "Fresh products and quick delivery. Loved it!"
+                    ),
+                    _buildReviewCard(
+                        "Rahul Kumar",
+                        "Great prices and easy to use app."
+                    ),
+                    _buildReviewCard(
+                        "Neha Verma",
+                        "Quality groceries and smooth checkout."
+                    ),
                   ],
                 ),
               ),
@@ -359,13 +397,9 @@ class _HomePageState extends State<HomePage>
         currentIndex: _currentIndex,
         onTap: (i) {
           setState(() => _currentIndex = i);
-          if (i == 1) {
-            Navigator.pushNamed(context, "/categories");
-          } else if (i == 2) {
-            Navigator.pushNamed(context, "/orders");
-          } else if (i == 3) {
-            Navigator.pushNamed(context, "/profile");
-          }
+          if (i == 1) Navigator.pushNamed(context, "/categories");
+          if (i == 2) Navigator.pushNamed(context, "/orders");
+          if (i == 3) Navigator.pushNamed(context, "/profile");
         },
         items: const [
           BottomNavigationBarItem(
@@ -376,6 +410,43 @@ class _HomePageState extends State<HomePage>
               icon: Icon(Icons.receipt_long), label: "Orders"),
           BottomNavigationBarItem(
               icon: Icon(Icons.person), label: "Profile"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewCard(String name, String review) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 4)
+        ],
+      ),
+      child: Row(
+        children: [
+          const CircleAvatar(
+            backgroundColor: BhejduColors.primaryBlue,
+            child: Icon(Icons.person, color: Colors.white),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text(review,
+                    style: const TextStyle(
+                        color: BhejduColors.textGrey)),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -401,16 +472,15 @@ class _ServerBannerSliderState extends State<_ServerBannerSlider> {
   void initState() {
     super.initState();
     controller = PageController();
-    timer =
-        Timer.periodic(const Duration(seconds: 4), (_) {
-          if (!controller.hasClients) return;
-          index = (index + 1) % widget.banners.length;
-          controller.animateToPage(
-            index,
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeInOut,
-          );
-        });
+    timer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!controller.hasClients) return;
+      index = (index + 1) % widget.banners.length;
+      controller.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    });
   }
 
   @override

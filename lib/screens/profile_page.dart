@@ -6,6 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
 import 'edit_profile_page.dart';
+import 'notifications_page.dart';
+import 'privacy_policy_page.dart';
+import 'terms_conditions_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -57,7 +60,7 @@ class _ProfilePageState extends State<ProfilePage> {
       body: Column(
         children: [
           BhejduAppBar(
-            title: "My Profile",
+            title: "Profile",
             showBack: true,
             onBackTap: () => Navigator.pop(context),
           ),
@@ -65,68 +68,52 @@ class _ProfilePageState extends State<ProfilePage> {
           Expanded(
             child: loading
                 ? const Center(child: CircularProgressIndicator())
-                : user == null
-                ? const Center(child: Text("Failed to load profile"))
                 : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  /// PROFILE CARD
+
+                  /// PROFILE HEADER
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 6,
-                          offset: Offset(2, 3),
-                        ),
-                      ],
+                      gradient: LinearGradient(
+                        colors: [
+                          BhejduColors.primaryBlue,
+                          BhejduColors.primaryBlueLight,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       children: [
-                        CircleAvatar(
-                          radius: 35,
-                          backgroundColor:
-                          BhejduColors.primaryBlueLight,
-                          backgroundImage:
-                          user!["profile_image"] != null &&
-                              user!["profile_image"] != ""
-                              ? NetworkImage(
-                            "https://darkslategrey-chicken-274271.hostingersite.com/uploads/${user!["profile_image"]}",
-                          )
-                              : null,
-                          child: (user!["profile_image"] == null ||
-                              user!["profile_image"] == "")
-                              ? const Icon(
-                            Icons.person,
-                            size: 40,
-                            color:
-                            BhejduColors.primaryBlue,
-                          )
-                              : null,
+                        const CircleAvatar(
+                          radius: 32,
+                          backgroundColor: Colors.white,
+                          child: Icon(Icons.person,
+                              size: 36,
+                              color: BhejduColors.primaryBlue),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 14),
                         Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              user!["name"] ?? "",
+                              user?["name"] ?? "",
                               style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              user!["email"] ?? "",
-                              style: const TextStyle(
-                                color:
-                                BhejduColors.textGrey,
-                              ),
+                              user?["email"] ?? "",
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              user?["mobile"] ?? "",
+                              style: const TextStyle(color: Colors.white70),
                             ),
                           ],
                         ),
@@ -134,41 +121,92 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
 
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 22),
 
-                  _tile(
-                    Icons.edit,
-                    "Edit Profile",
-                        () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              EditProfilePage(userData: user!),
-                        ),
-                      );
-                      fetchUser();
-                    },
+                  /// ACCOUNT SECTION
+                  _sectionCard(
+                    title: "Account",
+                    children: [
+                      _tile(
+                        Icons.person_outline,
+                        "Edit Profile",
+                            () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  EditProfilePage(userData: user!),
+                            ),
+                          );
+                          fetchUser();
+                        },
+                      ),
+
+                      _tile(
+                        Icons.location_on_outlined,
+                        "Manage Addresses",
+                            () => Navigator.pushNamed(context, "/address"),
+                      ),
+
+                      /// ✅ NOTIFICATIONS WORKING
+                      _tile(
+                        Icons.notifications_none,
+                        "Notifications",
+                            () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NotificationsPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
 
-                  _tile(
-                    Icons.location_on,
-                    "My Addresses",
-                        () => Navigator.pushNamed(context, "/address"),
+                  const SizedBox(height: 16),
+
+                  /// SUPPORT SECTION
+                  _sectionCard(
+                    title: "Support",
+                    children: [
+
+                      /// ✅ TERMS & CONDITIONS WORKING
+                      _tile(
+                        Icons.description_outlined,
+                        "Terms & Conditions",
+                            () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const TermsConditionsPage(),
+                            ),
+                          );
+                        },
+                      ),
+
+                      /// ✅ PRIVACY POLICY WORKING
+                      _tile(
+                        Icons.privacy_tip_outlined,
+                        "Privacy Policy",
+                            () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const PrivacyPolicyPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
 
-                  _tile(
-                    Icons.shopping_bag,
-                    "My Orders",
-                        () => Navigator.pushNamed(context, "/orders"),
-                  ),
+                  const SizedBox(height: 18),
 
-                  _tile(
-                    Icons.logout,
-                    "Logout",
-                        () async {
-                      final prefs =
-                      await SharedPreferences.getInstance();
+                  /// LOGOUT
+                  InkWell(
+                    onTap: () async {
+                      final prefs = await SharedPreferences.getInstance();
                       await prefs.clear();
                       Navigator.pushNamedAndRemoveUntil(
                         context,
@@ -176,7 +214,37 @@ class _ProfilePageState extends State<ProfilePage> {
                             (_) => false,
                       );
                     },
-                    isLogout: true,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.logout, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text(
+                            "Logout",
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  const Text(
+                    "Bhejdu v1.0.0\n© 2025 All rights reserved",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: BhejduColors.textGrey, fontSize: 12),
                   ),
                 ],
               ),
@@ -187,30 +255,48 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _tile(IconData icon, String title, VoidCallback onTap,
-      {bool isLogout = false}) {
+  Widget _sectionCard({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 6),
         ],
       ),
-      child: ListTile(
-        leading: Icon(icon,
-            color: isLogout ? Colors.red : BhejduColors.primaryBlue),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: isLogout ? Colors.red : BhejduColors.textDark,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 18),
-        onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style:
+              const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          ...children,
+        ],
       ),
+    );
+  }
+
+  Widget _tile(
+      IconData icon,
+      String title,
+      VoidCallback onTap, {
+        String? subtitle,
+      }) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: BhejduColors.primaryBlueLight,
+        child: Icon(icon, color: BhejduColors.primaryBlue),
+      ),
+      title:
+      Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: subtitle != null ? Text(subtitle) : null,
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: onTap,
     );
   }
 }

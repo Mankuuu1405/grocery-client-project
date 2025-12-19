@@ -6,6 +6,7 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../theme/bhejdu_colors.dart';
 import '../widgets/top_app_bar.dart';
 import '../utils/preference_manager.dart';
+import '../screens/invoice_page.dart';
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -14,7 +15,9 @@ class CheckoutPage extends StatefulWidget {
   State<CheckoutPage> createState() => _CheckoutPageState();
 }
 
-class _CheckoutPageState extends State<CheckoutPage> {
+class _CheckoutPageState extends State<CheckoutPage>
+ {
+  List addresses = [];
   Map? selectedAddress;
   int? selectedAddressId;
   bool loadingAddress = true;
@@ -25,13 +28,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
       "https://darkslategrey-chicken-274271.hostingersite.com/api";
 
   late Razorpay _razorpay;
+  int? _orderId;
 
   @override
   void initState() {
     super.initState();
-    fetchDefaultAddress();
+    fetchAddresses();
 
-    /// ⭐ RAZORPAY INIT (ADDED)
     _razorpay = Razorpay();
     _razorpay.on(
         Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
@@ -45,7 +48,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     super.dispose();
   }
 
-  Future fetchDefaultAddress() async {
+  Future fetchAddresses() async {
     final userId = await PreferenceManager.getUserId();
 
     final response = await http.post(
@@ -58,7 +61,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     if (data["status"] == "success" && data["addresses"].isNotEmpty) {
       setState(() {
-        selectedAddress = data["addresses"][0];
+        addresses = data["addresses"];
+        selectedAddress = addresses.first;
         selectedAddressId = selectedAddress!["id"];
         loadingAddress = false;
       });
@@ -67,35 +71,69 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  /// ⭐ OPEN RAZORPAY (ADDED)
-  void openRazorpay(int amount) {
+  Future<int?> createOrder(int total) async {
+    final userId = await PreferenceManager.getUserId();
+
+    final response = await http.post(
+      Uri.parse("$baseUrl/create_order.php"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "user_id": userId,
+        "total_amount": total,
+        "payment_method": paymentMethod,
+        "address": selectedAddress?["address"],
+        "cart_items": [],
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+    return data["status"] == "success" ? data["order_id"] : null;
+  }
+
+  Future<String?> createRazorpayOrder(int amount) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl/create_razorpay_order.php"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"amount": amount}),
+    );
+
+    final data = jsonDecode(response.body);
+    return data["id"];
+  }
+
+  void openRazorpay(int amount, String razorpayOrderId) {
     var options = {
       'key': 'rzp_test_R616iaJnVZkuNY',
       'amount': amount * 100,
+      'currency': 'INR',
+      'order_id': razorpayOrderId,
       'name': 'Bhejdu',
       'description': 'Grocery Order',
-      'prefill': {
-        'contact': '9999999999',
-        'email': 'test@email.com',
-      }
     };
 
     _razorpay.open(options);
   }
 
-  /// ⭐ PAYMENT SUCCESS
-  void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    Navigator.pushNamed(
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    await http.post(
+      Uri.parse("$baseUrl/verify_payment.php"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "order_id": _orderId,
+        "razorpay_order_id": response.orderId,
+        "razorpay_payment_id": response.paymentId,
+        "razorpay_signature": response.signature,
+      }),
+    );
+
+    Navigator.push(
       context,
-      "/orderConfirmation",
-      arguments: {
-        "address_id": selectedAddressId,
-        "payment_method": "online",
-      },
+      MaterialPageRoute(
+        builder: (_) => InvoicePage(orderId: _orderId!),
+      ),
     );
   }
 
-  /// ⭐ PAYMENT FAILED
   void _handlePaymentError(PaymentFailureResponse response) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Payment failed")),
@@ -134,72 +172,35 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       color: BhejduColors.textDark,
                     ),
                   ),
+
                   const SizedBox(height: 12),
 
-                  GestureDetector(
-                    onTap: () async {
-                      final result =
-                      await Navigator.pushNamed(context, "/address");
-
-                      if (result != null && result is Map) {
-                        setState(() {
-                          selectedAddress = result;
-                          selectedAddressId = result["id"];
-                        });
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 8,
-                            offset: Offset(2, 3),
-                          ),
-                        ],
-                      ),
-                      child: loadingAddress
-                          ? const Center(child: CircularProgressIndicator())
-                          : Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.location_on,
-                              color: BhejduColors.primaryBlue, size: 28),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  selectedAddress?["title"] ??
-                                      "Add Address",
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: BhejduColors.textDark,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  selectedAddress?["address"] ??
-                                      "Tap to add delivery address",
-                                  style: const TextStyle(
-                                    color: BhejduColors.textGrey,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.edit,
-                              color: BhejduColors.primaryBlue),
-                        ],
-                      ),
-                    ),
+                  loadingAddress
+                      ? const Center(child: CircularProgressIndicator())
+                      : addresses.isEmpty
+                      ? const Text(
+                    "No address found. Please add one.",
+                    style: TextStyle(
+                        color: BhejduColors.textGrey),
+                  )
+                      : Column(
+                    children: addresses.map<Widget>((a) {
+                      return RadioListTile<int>(
+                        value: a["id"],
+                        groupValue: selectedAddressId,
+                        onChanged: (v) {
+                          setState(() {
+                            selectedAddressId = v;
+                            selectedAddress = a;
+                          });
+                        },
+                        title: Text(
+                          a["address"],
+                          style:
+                          const TextStyle(fontSize: 14),
+                        ),
+                      );
+                    }).toList(),
                   ),
 
                   const SizedBox(height: 25),
@@ -212,7 +213,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       color: BhejduColors.textDark,
                     ),
                   ),
-                  const SizedBox(height: 12),
 
                   RadioListTile(
                     value: "cod",
@@ -221,6 +221,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         setState(() => paymentMethod = v.toString()),
                     title: const Text("Cash on Delivery"),
                   ),
+
                   RadioListTile(
                     value: "online",
                     groupValue: paymentMethod,
@@ -240,19 +241,27 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     child: ElevatedButton(
                       onPressed: selectedAddressId == null
                           ? null
-                          : () {
-                        /// ⭐ UPDATED LOGIC ONLY
+                          : () async {
+
                         if (paymentMethod == "online") {
-                          openRazorpay(total);
+                          _orderId = await createOrder(total);
+                          if (_orderId == null) return;
+
+                          final razorpayOrderId =
+                          await createRazorpayOrder(total);
+                          if (razorpayOrderId == null) return;
+
+                          openRazorpay(total, razorpayOrderId);
                         } else {
-                          Navigator.pushNamed(
+                          _orderId = await createOrder(total);
+                          if (_orderId == null) return;
+
+                          Navigator.push(
                             context,
-                            "/orderConfirmation",
-                            arguments: {
-                              "address_id": selectedAddressId,
-                              "total": total,
-                              "payment_method": "cod",
-                            },
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  InvoicePage(orderId: _orderId!),
+                            ),
                           );
                         }
                       },
@@ -274,8 +283,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 20),
                 ],
               ),
             ),

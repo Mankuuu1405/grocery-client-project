@@ -46,6 +46,8 @@ class CategoryCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               title,
+              maxLines: 1, // ✅ FIX
+              overflow: TextOverflow.ellipsis, // ✅ FIX
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 14,
