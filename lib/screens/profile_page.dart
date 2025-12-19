@@ -9,6 +9,7 @@ import 'edit_profile_page.dart';
 import 'notifications_page.dart';
 import 'privacy_policy_page.dart';
 import 'terms_conditions_page.dart';
+import 'contact_support_page.dart'; // ⭐ ADDED
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -101,19 +102,22 @@ class _ProfilePageState extends State<ProfilePage> {
                             Text(
                               user?["name"] ?? "",
                               style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold),
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               user?["email"] ?? "",
-                              style: const TextStyle(color: Colors.white70),
+                              style:
+                              const TextStyle(color: Colors.white70),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               user?["mobile"] ?? "",
-                              style: const TextStyle(color: Colors.white70),
+                              style:
+                              const TextStyle(color: Colors.white70),
                             ),
                           ],
                         ),
@@ -148,7 +152,6 @@ class _ProfilePageState extends State<ProfilePage> {
                             () => Navigator.pushNamed(context, "/address"),
                       ),
 
-                      /// ✅ NOTIFICATIONS WORKING
                       _tile(
                         Icons.notifications_none,
                         "Notifications",
@@ -156,7 +159,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const NotificationsPage(),
+                              builder: (_) =>
+                              const NotificationsPage(),
                             ),
                           );
                         },
@@ -166,12 +170,25 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   const SizedBox(height: 16),
 
-                  /// SUPPORT SECTION
+                  /// SUPPORT SECTION (UPDATED)
                   _sectionCard(
                     title: "Support",
                     children: [
 
-                      /// ✅ TERMS & CONDITIONS WORKING
+                      _tile(
+                        Icons.headset_mic_outlined,
+                        "Contact & Support",
+                            () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                              const ContactSupportPage(),
+                            ),
+                          );
+                        },
+                      ),
+
                       _tile(
                         Icons.description_outlined,
                         "Terms & Conditions",
@@ -179,13 +196,13 @@ class _ProfilePageState extends State<ProfilePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const TermsConditionsPage(),
+                              builder: (_) =>
+                              const TermsConditionsPage(),
                             ),
                           );
                         },
                       ),
 
-                      /// ✅ PRIVACY POLICY WORKING
                       _tile(
                         Icons.privacy_tip_outlined,
                         "Privacy Policy",
@@ -193,7 +210,8 @@ class _ProfilePageState extends State<ProfilePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const PrivacyPolicyPage(),
+                              builder: (_) =>
+                              const PrivacyPolicyPage(),
                             ),
                           );
                         },
@@ -206,7 +224,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   /// LOGOUT
                   InkWell(
                     onTap: () async {
-                      final prefs = await SharedPreferences.getInstance();
+                      final prefs =
+                      await SharedPreferences.getInstance();
                       await prefs.clear();
                       Navigator.pushNamedAndRemoveUntil(
                         context,
@@ -216,7 +235,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding:
+                      const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
@@ -255,6 +275,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  /// SECTION CARD
   Widget _sectionCard({
     required String title,
     required List<Widget> children,
@@ -271,9 +292,11 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style:
+            const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 10),
           ...children,
         ],
@@ -281,6 +304,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  /// TILE
   Widget _tile(
       IconData icon,
       String title,
@@ -292,8 +316,10 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: BhejduColors.primaryBlueLight,
         child: Icon(icon, color: BhejduColors.primaryBlue),
       ),
-      title:
-      Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
       subtitle: subtitle != null ? Text(subtitle) : null,
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: onTap,

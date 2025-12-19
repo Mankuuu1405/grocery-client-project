@@ -22,7 +22,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-
   final GlobalKey<ScaffoldState> _scaffoldKey =
   GlobalKey<ScaffoldState>();
 
@@ -34,6 +33,12 @@ class _HomePageState extends State<HomePage>
   List featured = [];
   List<String> banners = [];
   List offers = [];
+  List reviews = [];
+
+  /// ⭐ SEARCH (ADDED)
+  final TextEditingController _searchCtrl = TextEditingController();
+  List searchResults = [];
+  bool searching = false;
 
   int _currentIndex = 0;
 
@@ -61,44 +66,74 @@ class _HomePageState extends State<HomePage>
     try {
       final bannerRes = await http.get(Uri.parse(
           "https://darkslategrey-chicken-274271.hostingersite.com/api/get_banners.php"));
-
       final catRes = await http.get(Uri.parse(
           "https://darkslategrey-chicken-274271.hostingersite.com/api/get_categories.php"));
-
       final featRes = await http.get(Uri.parse(
           "https://darkslategrey-chicken-274271.hostingersite.com/api/get_featured_products.php"));
-
       final offerRes = await http.get(Uri.parse(
           "https://darkslategrey-chicken-274271.hostingersite.com/api/get_offers.php"));
+      final reviewRes = await http.get(Uri.parse(
+          "https://darkslategrey-chicken-274271.hostingersite.com/api/get_latest_reviews.php"));
 
       final bData = jsonDecode(bannerRes.body);
       final cData = jsonDecode(catRes.body);
       final fData = jsonDecode(featRes.body);
       final oData = jsonDecode(offerRes.body);
+      final rData = jsonDecode(reviewRes.body);
 
       if (bData["status"] == "success") {
         banners = (bData["banners"] as List)
             .map<String>((e) => e["image"].toString())
             .toList();
       }
-
       if (cData["status"] == "success") {
         categories = cData["categories"];
       }
-
       if (fData["status"] == "success") {
         featured = fData["products"];
       }
-
       if (oData["status"] == "success") {
         offers = oData["offers"];
       }
-
+      if (rData["status"] == "success") {
+        reviews = rData["reviews"];
+      }
     } catch (e) {
       debugPrint("Home error: $e");
     }
 
     setState(() => loading = false);
+  }
+
+  /// ⭐ SEARCH API (ADDED)
+  Future searchProducts(String keyword) async {
+    if (keyword.isEmpty) {
+      setState(() {
+        searching = false;
+        searchResults.clear();
+      });
+      return;
+    }
+
+    setState(() => searching = true);
+
+    try {
+      final res = await http.post(
+        Uri.parse(
+            "https://darkslategrey-chicken-274271.hostingersite.com/api/search_products.php"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"keyword": keyword}),
+      );
+
+      final data = jsonDecode(res.body);
+      if (data["status"] == "success") {
+        setState(() {
+          searchResults = data["products"];
+        });
+      }
+    } catch (e) {
+      debugPrint("Search error: $e");
+    }
   }
 
   IconData getIcon(String? name) {
@@ -119,6 +154,7 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     fadeCtrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -135,23 +171,45 @@ class _HomePageState extends State<HomePage>
           children: [
             BhejduAppBar(
               title: "Home",
-              onMenuTap: () {
-                _scaffoldKey.currentState?.openDrawer();
-              },
+              onMenuTap: () =>
+                  _scaffoldKey.currentState?.openDrawer(),
+            ),
+
+            /// ⭐ SEARCH BAR (ADDED ONLY)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _searchCtrl,
+                onChanged: searchProducts,
+                decoration: InputDecoration(
+                  hintText: "Search products...",
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
             ),
 
             Expanded(
               child: loading
                   ? const Center(child: CircularProgressIndicator())
+                  : searching
+                  ? _buildSearchResults()
                   : SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
                   children: [
 
                     banners.isEmpty
                         ? const BannerSlider()
-                        : _ServerBannerSlider(banners: banners),
+                        : _ServerBannerSlider(
+                        banners: banners),
 
                     const SizedBox(height: 24),
 
@@ -161,26 +219,31 @@ class _HomePageState extends State<HomePage>
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: BhejduColors.textDark,
+                          color:
+                          BhejduColors.textDark,
                         ),
                       ),
-
                       const SizedBox(height: 14),
-
                       SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
+                        scrollDirection:
+                        Axis.horizontal,
                         child: Row(
-                          children: offers.map((o) {
+                          children:
+                          offers.map((o) {
                             return Padding(
-                              padding: const EdgeInsets.only(right: 12),
+                              padding:
+                              const EdgeInsets
+                                  .only(
+                                  right: 12),
                               child: OfferCard(
                                 title:
                                 "${o["title"]}\n${o["subtitle"]}",
                                 bgColor: Color(
-                                  int.parse(
-                                    o["bg_color"]
-                                        .replaceFirst("#", "0xff"),
-                                  ),
+                                  int.parse(o[
+                                  "bg_color"]
+                                      .replaceFirst(
+                                      "#",
+                                      "0xff")),
                                 ),
                               ),
                             );
@@ -195,33 +258,45 @@ class _HomePageState extends State<HomePage>
                       "Categories",
                       style: TextStyle(
                         fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: BhejduColors.textDark,
+                        fontWeight:
+                        FontWeight.w700,
+                        color:
+                        BhejduColors.textDark,
                       ),
                     ),
 
                     const SizedBox(height: 14),
 
                     SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
+                      scrollDirection:
+                      Axis.horizontal,
                       child: Row(
-                        children: categories.map((cat) {
+                        children:
+                        categories.map((cat) {
                           return Padding(
-                            padding: const EdgeInsets.only(
-                              right: 14,
-                              bottom: 12, // ✅ THIS FIXES THE TOUCHING ISSUE
-                            ),
+                            padding:
+                            const EdgeInsets
+                                .only(
+                                right: 14,
+                                bottom: 12),
                             child: CategoryCard(
-                              title: cat["name"],
-                              icon: getIcon(cat["icon"]),
-                              bgColor: Colors.white,
+                              title:
+                              cat["name"],
+                              icon: getIcon(
+                                  cat["icon"]),
+                              bgColor:
+                              Colors.white,
                               onTap: () {
-                                Navigator.pushNamed(
+                                Navigator
+                                    .pushNamed(
                                   context,
                                   "/product-list",
                                   arguments: {
-                                    "id": int.parse(cat["id"].toString()),
-                                    "name": cat["name"],
+                                    "id": int.parse(
+                                        cat["id"]
+                                            .toString()),
+                                    "name":
+                                    cat["name"],
                                   },
                                 );
                               },
@@ -231,35 +306,43 @@ class _HomePageState extends State<HomePage>
                       ),
                     ),
 
-                    /// ✅ UPDATED GAP — THIS IS THE ONLY CHANGE
                     const SizedBox(height: 40),
 
+                    /// FEATURED PRODUCTS (UNCHANGED)
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment:
+                      MainAxisAlignment
+                          .spaceBetween,
                       children: [
                         const Text(
                           "Featured Products",
                           style: TextStyle(
                             fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: BhejduColors.textDark,
+                            fontWeight:
+                            FontWeight.w700,
+                            color:
+                            BhejduColors
+                                .textDark,
                           ),
                         ),
-
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const AllProductsPage(),
+                                builder: (_) =>
+                                const AllProductsPage(),
                               ),
                             );
                           },
                           child: const Text(
                             "View All",
                             style: TextStyle(
-                              color: BhejduColors.primaryBlue,
-                              fontWeight: FontWeight.w600,
+                              color:
+                              BhejduColors
+                                  .primaryBlue,
+                              fontWeight:
+                              FontWeight.w600,
                             ),
                           ),
                         ),
@@ -280,10 +363,9 @@ class _HomePageState extends State<HomePage>
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
                       ),
-                      itemBuilder: (context, i) {
+                      itemBuilder:
+                          (context, i) {
                         final p = featured[i];
-                        final img = p["image"].toString();
-
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -291,63 +373,86 @@ class _HomePageState extends State<HomePage>
                               MaterialPageRoute(
                                 builder: (_) =>
                                     ProductVariantsPage(
-                                      productId: int.parse(
-                                          p["id"].toString()),
-                                      productName: p["name"],
+                                      productId:
+                                      int.parse(p[
+                                      "id"]
+                                          .toString()),
+                                      productName:
+                                      p["name"],
                                     ),
                               ),
                             );
                           },
                           child: Container(
-                            decoration: BoxDecoration(
+                            decoration:
+                            BoxDecoration(
                               color: Colors.white,
                               borderRadius:
-                              BorderRadius.circular(16),
+                              BorderRadius
+                                  .circular(
+                                  16),
                               boxShadow: const [
                                 BoxShadow(
-                                    color: Colors.black12,
-                                    blurRadius: 5)
+                                    color: Colors
+                                        .black12,
+                                    blurRadius:
+                                    5)
                               ],
                             ),
                             child: Column(
                               crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                              CrossAxisAlignment
+                                  .start,
                               children: [
                                 ClipRRect(
                                   borderRadius:
                                   const BorderRadius.vertical(
-                                      top: Radius.circular(16)),
-                                  child: Image.network(
-                                    img,
+                                      top: Radius.circular(
+                                          16)),
+                                  child:
+                                  Image.network(
+                                    p["image"],
                                     height: 120,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
+                                    width: double
+                                        .infinity,
+                                    fit: BoxFit
+                                        .cover,
                                   ),
                                 ),
                                 Padding(
                                   padding:
-                                  const EdgeInsets.all(10),
+                                  const EdgeInsets
+                                      .all(
+                                      10),
                                   child: Column(
                                     crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                    CrossAxisAlignment
+                                        .start,
                                     children: [
                                       Text(
                                         p["name"],
-                                        maxLines: 1,
+                                        maxLines:
+                                        1,
                                         overflow:
-                                        TextOverflow.ellipsis,
+                                        TextOverflow
+                                            .ellipsis,
                                         style: const TextStyle(
                                             fontWeight:
-                                            FontWeight.w600),
+                                            FontWeight
+                                                .w600),
                                       ),
-                                      const SizedBox(height: 6),
+                                      const SizedBox(
+                                          height:
+                                          6),
                                       Text(
                                         "₹${p["price"]}",
                                         style: const TextStyle(
-                                            color: BhejduColors
+                                            color:
+                                            BhejduColors
                                                 .successGreen,
                                             fontWeight:
-                                            FontWeight.bold),
+                                            FontWeight
+                                                .bold),
                                       ),
                                     ],
                                   ),
@@ -359,32 +464,25 @@ class _HomePageState extends State<HomePage>
                       },
                     ),
 
-                    /// 🔥 CUSTOMER REVIEWS (ADDED)
-                    const SizedBox(height: 30),
-
-                    const Text(
-                      "Customer Reviews",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: BhejduColors.textDark,
+                    if (reviews.isNotEmpty) ...[
+                      const SizedBox(height: 30),
+                      const Text(
+                        "Customer Reviews",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight:
+                          FontWeight.w700,
+                          color:
+                          BhejduColors.textDark,
+                        ),
                       ),
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    _buildReviewCard(
-                        "Priya Sharma",
-                        "Fresh products and quick delivery. Loved it!"
-                    ),
-                    _buildReviewCard(
-                        "Rahul Kumar",
-                        "Great prices and easy to use app."
-                    ),
-                    _buildReviewCard(
-                        "Neha Verma",
-                        "Quality groceries and smooth checkout."
-                    ),
+                      const SizedBox(height: 14),
+                      ...reviews.map((r) {
+                        return _buildReviewCard(
+                            r["name"],
+                            r["review"]);
+                      }).toList(),
+                    ],
                   ],
                 ),
               ),
@@ -397,21 +495,59 @@ class _HomePageState extends State<HomePage>
         currentIndex: _currentIndex,
         onTap: (i) {
           setState(() => _currentIndex = i);
-          if (i == 1) Navigator.pushNamed(context, "/categories");
-          if (i == 2) Navigator.pushNamed(context, "/orders");
-          if (i == 3) Navigator.pushNamed(context, "/profile");
+          if (i == 1)
+            Navigator.pushNamed(context, "/categories");
+          if (i == 2)
+            Navigator.pushNamed(context, "/orders");
+          if (i == 3)
+            Navigator.pushNamed(context, "/profile");
         },
         items: const [
           BottomNavigationBarItem(
               icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.grid_view), label: "Categories"),
+              icon: Icon(Icons.grid_view),
+              label: "Categories"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long), label: "Orders"),
+              icon: Icon(Icons.receipt_long),
+              label: "Orders"),
           BottomNavigationBarItem(
               icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
+    );
+  }
+
+  /// ⭐ SEARCH RESULT UI (ADDED)
+  Widget _buildSearchResults() {
+    if (searchResults.isEmpty) {
+      return const Center(child: Text("No products found"));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: searchResults.length,
+      itemBuilder: (context, i) {
+        final p = searchResults[i];
+        return ListTile(
+          leading: Image.network(p["image"], width: 50),
+          title: Text(p["name"]),
+          subtitle: Text("₹${p["price"]}"),
+          onTap: () {
+            setState(() => searching = false);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProductVariantsPage(
+                  productId:
+                  int.parse(p["id"].toString()),
+                  productName: p["name"],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -435,7 +571,8 @@ class _HomePageState extends State<HomePage>
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
               children: [
                 Text(name,
                     style: const TextStyle(
@@ -443,7 +580,8 @@ class _HomePageState extends State<HomePage>
                 const SizedBox(height: 4),
                 Text(review,
                     style: const TextStyle(
-                        color: BhejduColors.textGrey)),
+                        color:
+                        BhejduColors.textGrey)),
               ],
             ),
           ),
@@ -453,7 +591,7 @@ class _HomePageState extends State<HomePage>
   }
 }
 
-/// SERVER BANNER SLIDER
+/// SERVER BANNER SLIDER (UNCHANGED)
 class _ServerBannerSlider extends StatefulWidget {
   final List<String> banners;
   const _ServerBannerSlider({required this.banners});
@@ -477,7 +615,8 @@ class _ServerBannerSliderState extends State<_ServerBannerSlider> {
       index = (index + 1) % widget.banners.length;
       controller.animateToPage(
         index,
-        duration: const Duration(milliseconds: 400),
+        duration:
+        const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
       );
     });
@@ -498,8 +637,11 @@ class _ServerBannerSliderState extends State<_ServerBannerSlider> {
         controller: controller,
         itemCount: widget.banners.length,
         itemBuilder: (_, i) => ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Image.network(widget.banners[i], fit: BoxFit.cover),
+          borderRadius:
+          BorderRadius.circular(16),
+          child: Image.network(
+              widget.banners[i],
+              fit: BoxFit.cover),
         ),
       ),
     );
