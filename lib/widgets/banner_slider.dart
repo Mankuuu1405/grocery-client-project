@@ -100,30 +100,34 @@ class _BannerSliderState extends State<BannerSlider> {
             onPageChanged: (index) {
               setState(() => currentIndex = index);
             },
-            itemBuilder: (context, index) {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.easeInOut,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9, // 🔥 KEY FIX
+              itemBuilder: (context, index) {
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOut,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      width: double.infinity,
+                      height: double.infinity,
+                      alignment: Alignment.center,
+                      color: Colors.white, // optional, improves look
                       child: banners[index].startsWith("http")
                           ? Image.network(
                         banners[index],
-                        fit: BoxFit.contain,
+                        width: double.infinity,   // 🔥 IMPORTANT
+                        fit: BoxFit.contain,      // 🔥 NO CROPPING
                       )
                           : Image.asset(
                         banners[index],
-                        fit: BoxFit.contain,
+                        width: double.infinity,   // 🔥 IMPORTANT
+                        fit: BoxFit.contain,      // 🔥 NO CROPPING
                       ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+
 
 
           ),
