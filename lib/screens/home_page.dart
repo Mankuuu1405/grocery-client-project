@@ -9,6 +9,8 @@ import '../widgets/category_card.dart';
 import '../widgets/offer_card.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/top_app_bar.dart';
+
+
 import '../theme/bhejdu_colors.dart';
 import '../screens/product_variants_page.dart';
 import '../screens/all_products_page.dart';

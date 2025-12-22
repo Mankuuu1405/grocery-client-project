@@ -55,21 +55,12 @@ class BhejduAppBar extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          /// 🔵 ROW 1 — LOGO
-          Center(
-            child: Image.asset(
-              "assets/images/logo.png",
-              height: 38, // adjust if needed
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          /// 🔹 ROW 2 — HEADER BUTTONS
+          /// 🔵 TOP ROW: MENU - LOGO - CART/PROFILE
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              /// LEFT (MENU / BACK)
+              /// LEFT MENU
               GestureDetector(
                 onTap: () {
                   if (showBack) {
@@ -78,7 +69,7 @@ class BhejduAppBar extends StatelessWidget {
                         : Navigator.pop(context);
                   } else {
                     onMenuTap?.call();
-                  }
+                      }
                 },
                 child: Icon(
                   showBack ? Icons.arrow_back : Icons.menu,
@@ -87,20 +78,15 @@ class BhejduAppBar extends StatelessWidget {
                 ),
               ),
 
-              /// CENTER TITLE
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: BhejduColors.textDark,
-                ),
+              /// CENTER LOGO
+              Image.asset(
+                "assets/images/logo.png",
+                height: 40,
               ),
 
               /// RIGHT ICONS
               Row(
                 children: [
-                  /// 🛒 CART
                   GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(context, "/cart");
@@ -111,10 +97,7 @@ class BhejduAppBar extends StatelessWidget {
                       size: 26,
                     ),
                   ),
-
                   const SizedBox(width: 14),
-
-                  /// 👤 ACCOUNT
                   showAccountIcon
                       ? GestureDetector(
                     onTap: () => _handleAccountTap(context),
@@ -129,8 +112,23 @@ class BhejduAppBar extends StatelessWidget {
               ),
             ],
           ),
+
+          const SizedBox(height: 6),
+
+          /// 🔵 HOME (CENTERED UNDER LOGO)
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: BhejduColors.textDark,
+            ),
+          ),
         ],
       ),
+
+
+
     );
   }
 }
